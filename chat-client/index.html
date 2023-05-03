@@ -2,11 +2,12 @@
 <html>
 <head>
   <script type="module" src="./chat.js"></script>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div id="app">
     <h1>
-      My Cool Chat App
+      EduChat
     </h1>
 
     <p>
@@ -20,21 +21,23 @@
     <!-- If we're not logged in, hide everything except the login button -->
     <template v-if="$gf.me">
 
-      <p>
+      <div>
         <!-- We display names in multiple places, so we made a -->
         <!-- reusable <name></name> component. -->
         <!-- See below for the template. -->
-        My Name Is: <name :actor="$gf.me" :editable="true"></name>
+        <p>My Name Is: <name :actor="$gf.me" :editable="true"></name></p>
 
-        <input id="username" v-model="username" type="text" @input="badUsername = false">
-        <button id="userButton" @click="changeUsername"> Change Username </button>
-        <div style="background-color:red; width:fit-content; color:white" v-if="badUsername">
-          Username not available.
+        <div>
+          <input id="username" v-model="username" type="text" @input="badUsername = false">
+          <button id="userButton" @click="changeUsername"> Change Username </button>
+          <div style="background-color:red; width:fit-content; color:white" v-if="badUsername">
+            Username not available.
+          </div>
         </div>
 
-      </p>
+      </div>
 
-      <p>
+      <!-- <p>
         <label for="search">
           Search Users:
         </label>
@@ -42,11 +45,11 @@
         <div v-for="users of searchedUsers">
 
         </div>
-      </p>
+      </p> -->
 
       <p>
         Change chat format:
-        <input type="radio" id="channel" :value="false" v-model="privateMessaging" @change="getUsernames" />
+        <input type="radio" id="channel" :value="false" v-model="privateMessaging" />
         <label for="channel">Channel-based public chat</label>
 
         <input type="radio" id="pm" :value="true" v-model="privateMessaging" @change="getPrivateChats"/>
@@ -54,9 +57,11 @@
       </p>
 
       <div v-if="!privateMessaging">
+
         <label for="channel">
           Change the channel you're chatting in:
         </label>
+
         <input id="channel" v-model="channel"/>
         <button v-if="channel !== 'default'" id="backDefault" @click="channel='default'"> Back to Default Channel </button>
         <br> <br>
@@ -75,103 +80,165 @@
 
         <br><br>
 
-      <!-- A form for sending messages -->
-      <form @submit.prevent="sendMessage">
-        <input v-model="messageText" placeholder="Type a message..."/>
-        <input type="file" accept="image/png, image/jpeg" @change="onImageAttachment"/>
-        <input type="submit" value="Send"/>
-      </form>
+        <!-- A form for sending messages -->
+        <form @submit.prevent="sendMessage">
+          <input v-model="messageText" placeholder="Type a message..."/>
+          <input type="file" accept="image/png, image/jpeg" @change="onImageAttachment"/>
+          <input type="submit" value="Send"/>
+        </form>
+
+        <ul>
+          <!-- List all the messages -->
+          <li v-for="message, i of messages" :key="message.id">
+
+            <!-- Display and edit form if we're editing a message -->
+            <form v-if="editID==message.id" @submit.prevent="saveEditMessage(message)">
+              <input v-model="editText">
+              <input type="submit" value="Save"/>
+            </form>
+
+            <!-- Otherwise, display a bunch of properties from the message -->
+            <ul v-else>
+
+                <p v-if="message.actor == $gf.me"> <b>Me</b> @{{ actorUsernames[message.actor] }}</p>
+                <p v-else><b><name :actor="message.actor"></name></b> @{{ actorUsernames[message.actor] }}</p>
+                <p>{{ message.content }} </p>
+
+
+                <p v-if="message.published == message.updated"> Posted {{timeSincePosted(message.published)}} ago </p>
+                <p v-else> Last edited {{timeSincePosted(message.updated)}} ago </p>
+
+                <!-- <div v-if="myLikes.includes()"></div> -->
+                <like :messageid="message.id" :actorid="$gf.me"></like>
+
+
+                <div v-if="message.attachment">
+
+                  <div v-if="message.attachment.magnet">
+                    <img :src="downloadedImages[message.attachment.magnet]"/>
+                  </div>
+
+                  <div v-else>
+                    Waiting for image
+                  </div>
+                  
+                </div>
+  
+                <!-- This is a unique identifier that can be used to "link" to messages -->
+                <!-- ID: {{ message.id }} -->
+
+              <!-- Only add these controls if the message is ours -->
+              <!-- You can't edit or delete other people's messages -->
+              <template v-if="message.actor==$gf.me">
+                <li>
+                  <button @click="removeMessage(message)">
+                    Delete Message
+                  </button>
+                </li>
+                <li>
+                  <button @click="startEditMessage(message)">
+                    Edit Message
+                  </button>
+                </li>
+              </template>
+              <br>
+            </ul>
+          </li>
+        </ul>
 
       </div>
 
-      <div v-else>
+      <section v-else id="privMessaging">
 
-        Previous Chats:
+        <div id="privChats">
 
-        <button v-for="id of privUsers" @click="openChat(id[1])"><name :actor="id[0]"></name></button>
-        
-        <br> <br>  <br>
+          Previous Chats:
 
-        <button @click="startNewChat">New Chat</button>
-
-        <div v-if="newChat">
-          <label for="recipient">
-            Message to:
-          </label>
-          <input id="recipient" v-model="usernameRecipient" @input="updateRecipient"/>
-          <div style="background-color:red; width:fit-content; color:white" v-if="notifyBad">
-            Username not valid.
-          </div>
-
-          <!-- <name :actor="recipient"></name> -->
-
-          <br><br>
-
-          <form @submit.prevent="sendMessage">
-            <input v-model="messageText" placeholder="Type a message..."/>
-            <input type="submit" value="Send"/>
-          </form>
+          <article class="privChat" v-for="id of privUsers" @click="openChat(id[1])">
+            <name :actor="id[0]"></name>
+          </article>
 
         </div>
-      </div>
+
+        <div>
+
+          <button @click="startNewChat">New Chat</button>
+
+          <div v-if="newChat">
+            <label for="recipient">
+              Message to:
+            </label>
+            <input id="recipient" v-model="usernameRecipient" @input="updateRecipient"/>
+            <div style="background-color:red; width:fit-content; color:white" v-if="notifyBad">
+              Username not valid.
+            </div>
+  
+            <!-- <name :actor="recipient"></name> -->
+  
+            <br><br>
+  
+            <form @submit.prevent="sendMessage">
+              <input v-model="messageText" placeholder="Type a message..."/>
+              <input type="submit" value="Send"/>
+            </form>
+  
+          </div>
+
+          <!-- List all the messages -->
+          <article v-for="message, i of messages" :key="message.id">
+
+            <!-- Display and edit form if we're editing a message -->
+            <form v-if="editID==message.id" @submit.prevent="saveEditMessage(message)">
+              <input v-model="editText">
+              <input type="submit" value="Save"/>
+            </form>
+
+            <!-- Otherwise, display a bunch of properties from the message -->
+            <div v-else>
+
+                <p v-if="message.actor == $gf.me"> <b>Me</b> @{{ actorUsernames[message.actor] }} </p>
+                <p v-else><b><name :actor="message.actor"></name></b> @{{ actorUsernames[message.actor] }} </p>
+                <p>{{ message.content }} </p>
 
 
-      <ul>
-        <!-- List all the messages -->
-        <li v-for="message, i of messages" :key="message.id">
-
-          <!-- Display and edit form if we're editing a message -->
-          <form v-if="editID==message.id" @submit.prevent="saveEditMessage(message)">
-            <input v-model="editText">
-            <input type="submit" value="Save"/>
-          </form>
-
-          <!-- Otherwise, display a bunch of properties from the message -->
-          <ul v-else>
-
-              <p v-if="message.actor == $gf.me"> <b>Me</b> (ID: {{ message.actor }}) </p>
-              <p v-else><b><name :actor="message.actor"></name></b> (ID: {{ message.actor }}) </p>
-              <p class="msgUsername"> </p>
-              <p>{{ message.content }} </p>
+                <p v-if="message.published == message.updated"> Posted {{timeSincePosted(message.published)}} ago </p>
+                <p v-else> Last edited {{timeSincePosted(message.updated)}} ago </p>
 
 
-              <p v-if="message.published == message.updated"> Posted {{timeSincePosted(message.published)}} ago </p>
-              <p v-else> Last edited {{timeSincePosted(message.updated)}} ago </p>
+                <div v-if="message.attachment">
 
+                  <div v-if="message.attachment.magnet">
+                    <img :src="downloadedImages[message.attachment.magnet]"/>
+                  </div>
 
-              <div v-if="message.attachment">
-
-                <div v-if="message.attachment.magnet">
-                  <img :src="downloadedImages[message.attachment.magnet]"/>
+                  <div v-else>
+                    Waiting for image
+                  </div>
+                  
                 </div>
+  
+                <!-- This is a unique identifier that can be used to "link" to messages -->
+                <!-- ID: {{ message.id }} -->
 
-                <div v-else>
-                  Waiting for image
-                </div>
-                
-              </div>
- 
-              <!-- This is a unique identifier that can be used to "link" to messages -->
-              <!-- ID: {{ message.id }} -->
-
-            <!-- Only add these controls if the message is ours -->
-            <!-- You can't edit or delete other people's messages -->
-            <template v-if="message.actor==$gf.me">
-              <li>
+              <!-- Only add these controls if the message is ours -->
+              <!-- You can't edit or delete other people's messages -->
+              <template v-if="message.actor==$gf.me">
                 <button @click="removeMessage(message)">
                   Delete Message
                 </button>
-              </li>
-              <li>
                 <button @click="startEditMessage(message)">
                   Edit Message
                 </button>
-              </li>
-            </template>
-            <br>
-          </ul>
-        </li>
-      </li>
+              </template>
+
+              <br>
+            </div>
+
+          </article>
+        </div>
+
+      </section>
+
     </template>
   </div>
 
@@ -195,5 +262,12 @@
       <input type="submit" value="Save Name"/>
     </form>
   </template>
+
+  <template id="like">
+    <button v-if="myLikes.length > 0" @click="removeLike"> Dislike </button>
+    <button v-else @click="sendLike"> Like </button>
+    {{ likes.length }}
+  </template>
+
 </body>
 </html>

@@ -48,25 +48,23 @@ const app = {
       newChat: false,
       allUserIds: [],
       privUsers: [],
-      messageUsernames: [],
+      actorUsernames: {},
       notifyBad: false,
       badUsername: false,
       file: null,
       downloadedImages: {}
     }
   },
-  // watch: {
-  //   async usernameRecipient() {
-  //     console.log('here');
-  //     this.recepient = await this.resolver.usernameToActor(this.usernameRecipient);
-  //     console.log(this.recepient);    
-  //     messages();
-  //   }
-  // },
-
+  
   watch: {
-    async messages(messages) {
-      let imgMessages = messages.filter(m=>
+    async messages(newMessages) {
+      for (const message of newMessages) {
+        if (!this.actorUsernames[message.actor]) {
+          this.actorUsernames[message.actor] = await this.resolver.actorToUsername(message.actor);
+        }
+      }
+
+      let imgMessages = newMessages.filter(m=>
         m.attachment && m.attachment.type == "Image"
         && typeof m.attachment.magnet == "string"
       );
@@ -77,7 +75,6 @@ const app = {
           this.downloadedImages[imgMessage.attachment.magnet] = url;
         }
       }
-      console.log(this.downloadedImages);
     }
   },
 
@@ -96,23 +93,6 @@ const app = {
           m.content      &&
           // Is that property a string?
           typeof m.content=='string') 
-
-
-          // const userIds = [];
-
-          // for (const message of messages) {
-          //   for (const user of message.bto) {
-
-          //   }
-          //     if (message.bto[0] !== this.$gf.me && !privChats.includes(message.bto[0]))  {
-          //       userIds.push(message.bto[0]);
-          //     }
-      
-          //     if (message.actor !== this.$gf.me && !privChats.includes(message.actor))  {
-          //       userIds.push(message.actor);
-          //     }
-          //   }
-          // }
 
       // Do some more filtering for private messaging
       if (this.privateMessaging) {
@@ -142,7 +122,6 @@ const app = {
         }
 
         this.privChats = privChats;
-        console.log(this.privChats[0]);
 
         messages = messages.filter(m=>
           // Is the message private?
@@ -166,14 +145,6 @@ const app = {
   },
 
   methods: {
-
-    getUsernames() {
-      console.log('aca');
-      const classes = document.getElementsByClassName(".msgUsername");
-      for (let i = 0; i < this.message.length; i++) {
-        this.resolver.usernameToActor(this.message[i].actor).then((username) => classes[i].innerHTML = username)
-      }
-    },
 
     timeSincePosted(past) {
       const today = new Date();
@@ -209,11 +180,9 @@ const app = {
     },
 
     async openChat(id) {
-      console.log('aca');
       this.usernameRecipient = id;
       this.newChat = true;
       await this.updateRecipient();
-      console.log(this.recipient);
     },
 
     startNewChat() {
@@ -262,8 +231,6 @@ const app = {
     },
     
     async updateRecipient() {
-      console.log('aca');
-
       const user = await this.resolver.usernameToActor(this.usernameRecipient);
 
       if (user) {
@@ -275,9 +242,6 @@ const app = {
         }
         this.recepient = ''; 
       }
-
-      console.log(this.recipient);
-       
     },
 
     onImageAttachment(event) {
@@ -310,32 +274,16 @@ const app = {
       this.userChannels = userPublicChannels;
     },
 
-
     async getPrivateChats() {
-      const userChats = [];
+      setTimeout(this.updatePrivChats, 100);
+    },
 
+    async updatePrivChats() {
+      const userChats = [];
       for (const actor of this.privChats) {
         userChats.push([actor[0], await this.resolver.actorToUsername(actor[0])]); 
       }
-
       this.privUsers = userChats;
-      console.log(this.privChats[0]);
-
-      // console.log(userChats);
-      // console.log(this.privChats);
-      // const privChats = [];
-
-      // for (const message of this.messages) {
-      //   if (message.bto[0] !== this.$gf.me && !privChats.includes(message.bto[0]))  {
-      //     privChats.push(message.bto[0]);
-      //   }
-
-      //   if (message.actor !== this.$gf.me && !privChats.includes(message.actor))  {
-      //     privChats.push(message.actor);
-      //   }
-      // }
-
-      // console.log(privChats);
     },
 
     async getPrivateMessages() {
@@ -382,7 +330,6 @@ const app = {
 
       if (this.file) {
         const fileURI = await this.$gf.media.store(this.file);
-
         message.attachment = {};
         message.attachment.type = "Image";
         message.attachment.magnet = fileURI;
@@ -489,7 +436,87 @@ const Name = {
   template: '#name'
 }
 
-app.components = { Name }
+const Like = {
+  props: ["messageid", "actorid"],
+  template: '#like',
+  setup(props) {
+    const $gf = Vue.inject('graffiti')
+    const messageid = Vue.toRef(props, 'messageid')
+    const { objects: likesRaw } = $gf.useObjects([messageid])
+    return { likesRaw }
+  },
+  computed: {
+    likes() {
+      let likes = this.likesRaw.filter(
+        ( like =>
+          // Does the message have a type property?
+          like.type         &&
+          // Is the value of that property 'Note'?
+          like.type=='Like' &&
+          // Does the message have a content property?
+          like.object      &&
+          // Is that property a string?
+          like.object == this.messageid) 
+        // Your filtering here
+      )
+
+      const messagesLikes = {};
+      const newLikes = [];
+
+      for (const like of likes) {
+        if (messagesLikes[like.object]) {
+          if (!messagesLikes[like.object].includes(like.actor)) {
+            messagesLikes[like.object].push(like.actor);
+            newLikes.push(like);
+          } 
+        } else {
+          messagesLikes[like.object] = [like.actor];
+          newLikes.push(like);
+        }
+      }
+      likes = newLikes;
+      console.log(likes);
+      return likes;
+    },
+    myLikes() {
+      console.log('here');
+      let myLikes = this.likesRaw.filter(
+        ( like =>
+          like.type         &&
+          like.type=='Like' &&
+          like.actor      &&
+          like.object      &&
+          like.object == this.messageid &&
+          like.actor == this.$gf.me
+      )
+      )
+      return myLikes;
+    }
+  },
+  methods: {
+    sendLike() {
+      console.log(this.messageid);
+
+      const like = {
+          type: 'Like',
+          object: this.messageid,
+          actor: this.actorid,
+          context: [this.messageid]
+        }
+
+      this.$gf.post(like)
+      // console.log(like.actor)
+    },
+    removeLike() {
+      for (const like of this.myLikes) {
+        this.$gf.remove(like);
+      }
+      this.myLikes = [];
+    }
+  }
+}
+
+app.components = { Name, Like }
 Vue.createApp(app)
    .use(GraffitiPlugin(Vue))
    .mount('#app')
