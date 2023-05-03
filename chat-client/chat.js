@@ -135,12 +135,26 @@ const app = {
             m.actor == this.recepient
           ))
       }
-      return messages
+
+      messages = messages
         // Sort the messages with the
         // most recently created ones first
         .sort((m1, m2)=> new Date(m2.published) - new Date(m1.published))
         // Only show the 10 most recent ones
         .slice(0,10)
+
+        for (const message of messages) {
+          const read = {
+            type: 'Read',
+            object: message.id,
+            actor: this.$gf.me,
+            context: [message.id]
+          }
+    
+          this.$gf.post(read)
+        }
+
+      return messages
     },
   },
 
@@ -475,11 +489,9 @@ const Like = {
         }
       }
       likes = newLikes;
-      console.log(likes);
       return likes;
     },
     myLikes() {
-      console.log('here');
       let myLikes = this.likesRaw.filter(
         ( like =>
           like.type         &&
@@ -495,8 +507,6 @@ const Like = {
   },
   methods: {
     sendLike() {
-      console.log(this.messageid);
-
       const like = {
           type: 'Like',
           object: this.messageid,
@@ -505,7 +515,6 @@ const Like = {
         }
 
       this.$gf.post(like)
-      // console.log(like.actor)
     },
     removeLike() {
       for (const like of this.myLikes) {
@@ -516,7 +525,89 @@ const Like = {
   }
 }
 
-app.components = { Name, Like }
+
+const Read = {
+  props: ["messageid", "actorid"],
+  template: '#read',
+
+  created() {
+    this.resolver = new Resolver(this.$gf)
+  },
+  setup(props) {
+    const $gf = Vue.inject('graffiti')
+    const messageid = Vue.toRef(props, 'messageid')
+    const { objects: readsRaw } = $gf.useObjects([messageid])
+    return { readsRaw }
+  },
+  data() {
+    // Initialize some more reactive variables
+    return {
+      actorUsernames: {},
+    }
+  },
+  watch: {
+    async reads(newReads) {
+      for (const read of newReads) {
+        if (!this.actorUsernames[read.actor]) {
+          this.actorUsernames[read.actor] = await this.resolver.actorToUsername(read.actor);
+        }
+      }
+    }
+  },
+  computed: {
+    reads() {
+      let reads = this.readsRaw.filter(
+        ( read =>
+          // Does the message have a type property?
+          read.type         &&
+          // Is the value of that property 'Note'?
+          read.type=='Read' &&
+          // Does the message have a content property?
+          read.object      &&
+          // Is that property a string?
+          read.object == this.messageid) 
+        // Your filtering here
+      )
+
+      const messagesReads = {};
+      const newReads = [];
+
+      for (const read of reads) {
+        if (messagesReads[read.object]) {
+          if (!messagesReads[read.object].includes(read.actor)) {
+            messagesReads[read.object].push(read.actor);
+            newReads.push(read);
+          } 
+        } else {
+          messagesReads[read.object] = [read.actor];
+          newReads.push(read);
+        }
+      }
+      reads = newReads;
+      return reads;
+    },
+  },
+  methods: {
+    sendRead() {
+      console.log(this.messageid);
+
+      const read = {
+        type: 'Read',
+        object: this.messageid,
+        actor: this.actorid,
+        context: [this.messageid]
+      }
+
+      console.log(read.actor);
+
+      this.$gf.post(read)
+    }
+  }
+}
+
+
+
+app.components = { Name, Like, Read }
 Vue.createApp(app)
    .use(GraffitiPlugin(Vue))
    .mount('#app')

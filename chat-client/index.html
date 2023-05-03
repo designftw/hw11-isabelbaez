@@ -110,6 +110,7 @@
 
                 <!-- <div v-if="myLikes.includes()"></div> -->
                 <like :messageid="message.id" :actorid="$gf.me"></like>
+                <read :messageid="message.id" :actorid="$gf.me"></read>
 
 
                 <div v-if="message.attachment">
@@ -267,6 +268,18 @@
     <button v-if="myLikes.length > 0" @click="removeLike"> Dislike </button>
     <button v-else @click="sendLike"> Like </button>
     {{ likes.length }}
+  </template>
+
+  <template id="read">
+    <!-- <butt(on @click="sendRead"> Read </button> -->
+    <!-- {{sendRead()}} -->
+    <div>
+      Seen by 
+      <span v-for="read of reads">
+        {{ actorUsernames[read.actor]}},
+      </span>
+  </div>
+    
   </template>
 
 </body>
