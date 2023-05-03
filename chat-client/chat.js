@@ -606,8 +606,90 @@ const Read = {
 }
 
 
+const Reply = {
+  props: ["messageid", "actorid"],
+  template: '#reply',
 
-app.components = { Name, Like, Read }
+  created() {
+    this.resolver = new Resolver(this.$gf)
+  },
+
+  setup(props) {
+    const $gf = Vue.inject('graffiti')
+    const messageid = Vue.toRef(props, 'messageid')
+    const { objects: repliesRaw } = $gf.useObjects([messageid])
+    return { repliesRaw }
+  },
+
+  data() {
+    // Initialize some more reactive variables
+    return {
+      replyText: '',
+      actorUsernames: {},
+      replying: false,
+      viewing: false,
+    }
+  },
+
+  watch: {
+    async replies(newReplies) {
+      for (const reply of newReplies) {
+        if (!this.actorUsernames[reply.actor]) {
+          this.actorUsernames[reply.actor] = await this.resolver.actorToUsername(reply.actor);
+        }
+      }
+    }
+  },
+  computed: {
+    replies() {
+      let replies = this.repliesRaw.filter(
+        ( reply =>
+          // Does the message have a type property?
+          reply.type         &&
+          // Is the value of that property 'Note'?
+          reply.type== 'Note' &&
+          // Does the message have a content property?
+          reply.content      &&
+          // Is that property a string?
+          typeof reply.content == 'string'  &&
+
+          reply.inReplyTo      &&
+          // Is that property a string?
+          reply.inReplyTo == this.messageid) 
+        // Your filtering here
+      )
+
+      console.log(replies);
+
+      return replies;
+    },
+  },
+  methods: {
+    sendReply() {
+      console.log(this.messageid);
+
+      const reply = {
+        type: 'Note',
+        content: this.replyText,
+        actor: this.actorid,
+        inReplyTo: this.messageid,
+        context: [this.messageid]
+      }
+
+      console.log(reply.actor);
+
+      console.log(reply);
+      this.$gf.post(reply)
+      this.replying = false;
+    },
+    removeReply(reply) {
+      this.$gf.remove(reply)
+    },
+
+  }
+}
+
+app.components = { Name, Like, Read, Reply }
 Vue.createApp(app)
    .use(GraffitiPlugin(Vue))
    .mount('#app')

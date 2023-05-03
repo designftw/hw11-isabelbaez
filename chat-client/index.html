@@ -56,7 +56,7 @@
         <label for="pm">Private Messaging</label>
       </p>
 
-      <div v-if="!privateMessaging">
+      <section v-if="!privateMessaging">
 
         <label for="channel">
           Change the channel you're chatting in:
@@ -111,6 +111,7 @@
                 <!-- <div v-if="myLikes.includes()"></div> -->
                 <like :messageid="message.id" :actorid="$gf.me"></like>
                 <read :messageid="message.id" :actorid="$gf.me"></read>
+                <reply :messageid="message.id" :actorid="$gf.me"></reply>
 
 
                 <div v-if="message.attachment">
@@ -147,7 +148,7 @@
           </li>
         </ul>
 
-      </div>
+      </section>
 
       <section v-else id="privMessaging">
 
@@ -186,56 +187,67 @@
           </div>
 
           <!-- List all the messages -->
-          <article v-for="message, i of messages" :key="message.id">
-
-            <!-- Display and edit form if we're editing a message -->
-            <form v-if="editID==message.id" @submit.prevent="saveEditMessage(message)">
-              <input v-model="editText">
-              <input type="submit" value="Save"/>
-            </form>
-
-            <!-- Otherwise, display a bunch of properties from the message -->
-            <div v-else>
-
-                <p v-if="message.actor == $gf.me"> <b>Me</b> @{{ actorUsernames[message.actor] }} </p>
-                <p v-else><b><name :actor="message.actor"></name></b> @{{ actorUsernames[message.actor] }} </p>
-                <p>{{ message.content }} </p>
-
-
-                <p v-if="message.published == message.updated"> Posted {{timeSincePosted(message.published)}} ago </p>
-                <p v-else> Last edited {{timeSincePosted(message.updated)}} ago </p>
-
-
-                <div v-if="message.attachment">
-
-                  <div v-if="message.attachment.magnet">
-                    <img :src="downloadedImages[message.attachment.magnet]"/>
-                  </div>
-
-                  <div v-else>
-                    Waiting for image
-                  </div>
-                  
-                </div>
+          <ul>
+            <!-- List all the messages -->
+            <li v-for="message, i of messages" :key="message.id">
   
-                <!-- This is a unique identifier that can be used to "link" to messages -->
-                <!-- ID: {{ message.id }} -->
+              <!-- Display and edit form if we're editing a message -->
+              <form v-if="editID==message.id" @submit.prevent="saveEditMessage(message)">
+                <input v-model="editText">
+                <input type="submit" value="Save"/>
+              </form>
+  
+              <!-- Otherwise, display a bunch of properties from the message -->
+              <ul v-else>
+  
+                  <p v-if="message.actor == $gf.me"> <b>Me</b> @{{ actorUsernames[message.actor] }}</p>
+                  <p v-else><b><name :actor="message.actor"></name></b> @{{ actorUsernames[message.actor] }}</p>
+                  <p>{{ message.content }} </p>
+  
+  
+                  <p v-if="message.published == message.updated"> Posted {{timeSincePosted(message.published)}} ago </p>
+                  <p v-else> Last edited {{timeSincePosted(message.updated)}} ago </p>
+  
+                  <!-- <div v-if="myLikes.includes()"></div> -->
+                  <like :messageid="message.id" :actorid="$gf.me"></like>
+                  <read :messageid="message.id" :actorid="$gf.me"></read>
+                  <reply :messageid="message.id" :actorid="$gf.me"></reply>
 
-              <!-- Only add these controls if the message is ours -->
-              <!-- You can't edit or delete other people's messages -->
-              <template v-if="message.actor==$gf.me">
-                <button @click="removeMessage(message)">
-                  Delete Message
-                </button>
-                <button @click="startEditMessage(message)">
-                  Edit Message
-                </button>
-              </template>
-
-              <br>
-            </div>
-
-          </article>
+  
+  
+                  <div v-if="message.attachment">
+  
+                    <div v-if="message.attachment.magnet">
+                      <img :src="downloadedImages[message.attachment.magnet]"/>
+                    </div>
+  
+                    <div v-else>
+                      Waiting for image
+                    </div>
+                    
+                  </div>
+    
+                  <!-- This is a unique identifier that can be used to "link" to messages -->
+                  <!-- ID: {{ message.id }} -->
+  
+                <!-- Only add these controls if the message is ours -->
+                <!-- You can't edit or delete other people's messages -->
+                <template v-if="message.actor==$gf.me">
+                  <li>
+                    <button @click="removeMessage(message)">
+                      Delete Message
+                    </button>
+                  </li>
+                  <li>
+                    <button @click="startEditMessage(message)">
+                      Edit Message
+                    </button>
+                  </li>
+                </template>
+                <br>
+              </ul>
+            </li>
+          </ul>
         </div>
 
       </section>
@@ -271,16 +283,37 @@
   </template>
 
   <template id="read">
-    <!-- <butt(on @click="sendRead"> Read </button> -->
-    <!-- {{sendRead()}} -->
     <div>
       Seen by 
       <span v-for="read of reads">
         {{ actorUsernames[read.actor]}},
       </span>
   </div>
-    
-  </template>
+</template>
+
+<template id="reply">
+  <button v-if="!replying" @click="replying = true">Reply</button>
+  <div v-else>
+    <input v-model="replyText" placeholder="Type a reply..."/>
+    <button @click="sendReply">Send</button>
+  </div>
+
+  <div v-if="replies.length > 0">
+    <button v-if="!viewing" @click="viewing = true">View Replies</button>
+    <div v-else>
+      <button @click="viewing = false">Hide Replies</button>
+      <article v-for="reply of replies">
+
+        <b>{{actorUsernames[reply.actor]}}:</b> {{reply.content}}
+
+        <button v-if="reply.actor==$gf.me" @click="removeReply(reply)">Delete</button>
+
+      </article>
+    </div>
+  </div>
+
+
+</template>
 
 </body>
 </html>
