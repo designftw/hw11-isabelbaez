@@ -5,14 +5,112 @@
     background-color: rgb(206, 206, 206);
     border-radius: 3px;
     padding: 1%;
+    transition: width 0.3s ease;
 }
 
 .privChat:hover { 
     background-color: rgb(157, 157, 157);
     color: white;
+    width: 20vw;
 }
+
+/* .privChat: { 
+    background-color: rgb(157, 157, 157);
+    color: white;
+    width: 20vw;
+} */
 
 #privMessaging {
     display: flex;
     justify-content: space-evenly;
 }
+
+.message {
+    background-color: rgb(203, 203, 203);
+    margin-top: 5vh;
+    border-radius: 10px;
+    width: fit-content;
+    padding: 3%;
+    white-space: nowrap;
+    max-height: none;
+    overflow: visible;
+    transition: all 0.5s ease-out;
+    /* height: fit-content;
+    max-height: 50vh; 
+    transition: max-height 0.5s ease; */
+}
+
+.message:hover {
+    /* max-height: 100vh; 
+    transform: translate(50vw) ; */
+}
+
+.myMessage {
+    background-color: rgb(0, 102, 255);
+    margin-top: 5vh;
+    border-radius: 10px;
+    width: fit-content;
+    padding: 3%;
+    white-space: nowrap;
+    color: white;
+    transition: all 0.2s ease-out;
+    /* transform: translate(50vw); */
+}
+
+.authorInfo {
+    display: inline-block;
+}
+
+.authorPic {
+    aspect-ratio: 1 / 1;
+    height: 5vh;
+    border-radius: 20px;
+    transition: height 0.5s ease;
+}
+
+.authorPic:hover {
+    height: 10vh;
+    border-radius: 50px;
+}
+
+/* .loader {
+	border: 16px solid #f3f3f3; 
+	border-top: 16px solid #3498db; 
+	border-radius: 50%;
+	width: 0.5vw;
+	height: 0.5vw;
+	animation: spin 2s linear infinite;
+  }
+  
+  @keyframes spin {
+	0% { transform: rotate(0deg); }
+	100% { transform: rotate(360deg); }
+  } */
+
+  button {
+    border-radius: 10px;
+    border: 1px solid rgb(157, 157, 157);
+    background-color: rgb(157, 157, 157);
+    color: white;
+  }
+
+  .likeBtn {
+    background-color: rgb(203, 203, 203);
+    border: none;
+    font-size: 2vw;
+    transition: font-size 1s;
+  }
+
+  .dislikeBtn {
+    background-color: rgb(203, 203, 203);
+    border: none;
+    font-size: 2vw;
+    transition: font-size 1s;
+  }
+
+  .myMessage > #like > .dislikeBtn {
+    background-color: rgb(167, 43, 43);
+    border: none;
+    font-size: 2vw;
+    transition: font-size 1s;
+  }

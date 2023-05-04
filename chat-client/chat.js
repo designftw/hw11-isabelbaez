@@ -48,7 +48,7 @@ const app = {
       newChat: false,
       allUserIds: [],
       privUsers: [],
-      actorUsernames: {},
+      actorsToUsernames: {},
       notifyBad: false,
       badUsername: false,
       file: null,
@@ -59,8 +59,8 @@ const app = {
   watch: {
     async messages(newMessages) {
       for (const message of newMessages) {
-        if (!this.actorUsernames[message.actor]) {
-          this.actorUsernames[message.actor] = await this.resolver.actorToUsername(message.actor);
+        if (!this.actorsToUsernames[message.actor]) {
+          this.actorsToUsernames[message.actor] = await this.resolver.actorToUsername(message.actor);
         }
       }
 
@@ -70,9 +70,17 @@ const app = {
       );
       for (const imgMessage of imgMessages) {
         if (!this.downloadedImages[imgMessage.attachment.magnet]) {
-          const imgURI = await this.$gf.media.fetch(imgMessage.attachment.magnet);
-          const url = URL.createObjectURL(imgURI);
-          this.downloadedImages[imgMessage.attachment.magnet] = url;
+
+          try {
+            // console.log('start message image', imgMessage.content)
+            const imgURI = await this.$gf.media.fetch(imgMessage.attachment.magnet);
+            // console.log('got message image', imgMessage.content)
+            const url = URL.createObjectURL(imgURI);
+            this.downloadedImages[imgMessage.attachment.magnet] = url;
+          } catch (e) {
+            //console.log(e);
+          }
+
         }
       }
     }
@@ -143,16 +151,16 @@ const app = {
         // Only show the 10 most recent ones
         .slice(0,10)
 
-        for (const message of messages) {
-          const read = {
-            type: 'Read',
-            object: message.id,
-            actor: this.$gf.me,
-            context: [message.id]
-          }
+        // for (const message of messages) {
+        //   const read = {
+        //     type: 'Read',
+        //     object: message.id,
+        //     actor: this.$gf.me,
+        //     context: [message.id]
+        //   }
     
-          this.$gf.post(read)
-        }
+        //   this.$gf.post(read)
+        // }
 
       return messages
     },
@@ -281,7 +289,7 @@ const app = {
       const allUserChannels = await this.$gf.myContexts();
       const userPublicChannels = [];
       for (const channel of allUserChannels) {
-        if (!channel.includes('graffitiactor://') && channel !== "designftw.mit.edu" && channel !== "default") {
+        if (!channel.includes('graffiti') && channel !== "designftw.mit.edu" && channel !== "default") {
           userPublicChannels.push(channel);
         }
       }
@@ -351,11 +359,33 @@ const app = {
       }
 
       // Send!
-      this.$gf.post(message)
+      const postedMsg = this.$gf.post(message);
+
+      function msgMove(messageId) {
+
+        function msgMoveBack(messageId) {
+          const messageElem = document.getElementById("message-" + messageId);
+          messageElem.style.transform = 'translate(0vw)';
+        }
+
+        const messageElem = document.getElementById("message-" + messageId);
+        messageElem.style.transform = 'translate(20vw)';
+
+        setTimeout(msgMoveBack, 200, [messageId]);
+      }
+      setTimeout(msgMove, 300, [postedMsg.id]);
+    
+
+
+      // messageElem.style.transform = 'translate(50vw)'
     },
 
     removeMessage(message) {
-      this.$gf.remove(message)
+      const messageElem = document.getElementById("message-" + message.id);
+      console.log(messageElem);
+      messageElem.style.transform = 'translate(50vw)'
+
+      this.$gf.remove(message);
     },
 
     startEditMessage(message) {
@@ -384,6 +414,148 @@ const app = {
     }
   }
 }
+
+const Profile = {
+  props: ['actor', 'editable', 'downloadedimages'],
+
+  setup(props) {
+    // Get a collection of all objects associated with the actor
+    const { actor } = Vue.toRefs(props)
+    const $gf = Vue.inject('graffiti')
+    return $gf.useObjects([actor])
+  },
+
+  data() {
+    return {
+      editing: false,
+      file: null,
+      downloadedPic: null
+    }
+  },
+
+  computed: {
+    profilePic() {
+
+      let profilePic = 
+          this.objects
+            // Filter the raw objects for profile data
+            // https://www.w3.org/TR/activitystreams-vocabulary/#dfn-profile
+            .filter(m=>
+              // Does the message have a type property?
+              m.type &&
+              // Is the value of that property 'Profile'?
+              m.type=='Profile' &&
+              // Does the message have a name property?
+              m.icon &&
+              // Is that property a string?
+              m.icon.type == 'Image' &&
+
+              m.icon.magnet &&
+
+              typeof m.icon.magnet=='string')
+            // Choose the most recent one or null if none exists
+            .reduce((prev, curr)=> !prev || curr.published > prev.published? curr : prev, null)
+        return profilePic;
+    }
+  },
+
+  watch: {
+    async profilePic(newProfilePic) {
+
+      // if (!this.downloadedPics[newProfilePic.icon.magnet]) {
+      //   try {
+      //     console.log('start profile image')
+      //     const imgURI = await this.$gf.media.fetch(newProfilePic.icon.magnet);
+      //     console.log('got profile image')
+      //     const url = URL.createObjectURL(imgURI);
+      //     this.downloadedPics[newProfilePic.icon.magnet] = url;
+      //   } catch (e) {
+      //     console.log(e);
+      //   }
+      // }
+
+      // console.log('watch profilePic, downloaded imgaes in Profile', this.downloadedimages);
+
+      if (!this.downloadedimages[newProfilePic.icon.magnet]) {
+        try {
+            console.log('getting profile image', newProfilePic.icon.magnet);
+            const imgURI = await this.$gf.media.fetch(newProfilePic.icon.magnet);
+            console.log('got profile image', newProfilePic.icon.magnet)
+    
+            const url = URL.createObjectURL(imgURI);
+            this.downloadedPic = url;
+
+            this.downloadedimages[newProfilePic.icon.magnet] = url;
+    
+            console.log('downloaded picure in Profile', this.downloadedPic);
+            
+          } catch (e) {
+            //console.log(e);
+          }
+        } else {
+          this.downloadedPic = this.downloadedimages[newProfilePic.icon.magnet];
+        }
+
+      // console.log(this.downloadedPics);
+    }
+  },
+
+  methods: {
+    editProfilePic() {
+      this.editing = true
+      // If we already have a profile,
+      // initialize the edit text to our existing name
+      // this.file = this.profile? this.profile.name : this.editText
+    },
+
+    onImageAttachment(event) {
+      const file = event.target.files[0]
+      this.file = file;
+      // Do something with the file!
+    },
+
+    async saveProfilePic() {
+      const fileURI = await this.$gf.media.store(this.file);
+
+      const newPic = {
+        type: 'Profile',
+        icon: {}
+      }
+      newPic.icon.type = "Image";
+      newPic.icon.magnet = fileURI;
+
+      this.$gf.post(newPic);
+
+      // if (this.profilePic) {
+      //  console.log('editingPic', this.profilePic);
+      //   // If we already have a profile, just change the name
+      //   // (this will sync automatically)
+      //   this.profilePic.icon = {};
+      //   this.profilePic.icon.type = "Image";
+      //   this.profilePic.icon.magnet = fileURI;
+        
+      // } else {
+      //   // Otherwise create a profile
+      //   console.log('bet');
+
+      //   const newPic = {
+      //     type: 'Profile',
+      //     icon: {}
+      //   }
+      //   newPic.icon.type = "Image";
+      //   newPic.icon.magnet = fileURI;
+
+      //   this.$gf.post(newPic);
+      // }
+      // Exit the editing state
+
+      this.file = null;
+      this.editing = false;
+    }
+  },
+  template: '#profile'
+}
+
 
 const Name = {
   props: ['actor', 'editable'],
@@ -461,6 +633,7 @@ const Like = {
   },
   computed: {
     likes() {
+      console.log('wepa');
       let likes = this.likesRaw.filter(
         ( like =>
           // Does the message have a type property?
@@ -515,23 +688,64 @@ const Like = {
         }
 
       this.$gf.post(like)
+
+      function bigSize(messageId) {
+
+        function smallSize(messageId) {
+          const dislikeElem = document.getElementById("dislike-" + messageId);
+          dislikeElem.style.fontSize = '2vw';
+          console.log("dislike-" + messageId);
+          console.log(dislikeElem);
+        }
+
+        const dislikeElem = document.getElementById("dislike-" + messageId);
+        dislikeElem.style.fontSize = '3vw';
+        console.log("dislike-" + messageId);
+        console.log(dislikeElem);
+
+        setTimeout(smallSize, 500, [messageId]);
+      }
+
+
+      setTimeout(bigSize, 150, [this.messageid]);
+
+
+
     },
     removeLike() {
+      const copyLikes = [];
       for (const like of this.myLikes) {
         this.$gf.remove(like);
+        copyLikes.push(like);
       }
-      this.myLikes = [];
+
+      for (let i = 0; i < copyLikes.length; i++) {
+        this.myLikes.splice(i, 1); 
+      }
+      // this.myLikes = [];
     }
   }
 }
 
 
 const Read = {
-  props: ["messageid", "actorid"],
+  props: ["messageid", "actorid", "actorstousernames"],
   template: '#read',
 
   created() {
-    this.resolver = new Resolver(this.$gf)
+    const readers = this.reads.map(read => read.actor);
+    // console.log('readers', readers);
+    if (!readers.includes(this.$gf.me)) {
+      const read = {
+
+        type: 'Read',
+        object: this.messageid,
+        actor: this.$gf.me,
+        context: [this.messageid]
+      }
+
+      this.$gf.post(read)
+    }
   },
   setup(props) {
     const $gf = Vue.inject('graffiti')
@@ -539,21 +753,23 @@ const Read = {
     const { objects: readsRaw } = $gf.useObjects([messageid])
     return { readsRaw }
   },
-  data() {
-    // Initialize some more reactive variables
-    return {
-      actorUsernames: {},
-    }
-  },
-  watch: {
-    async reads(newReads) {
-      for (const read of newReads) {
-        if (!this.actorUsernames[read.actor]) {
-          this.actorUsernames[read.actor] = await this.resolver.actorToUsername(read.actor);
-        }
-      }
-    }
-  },
+  // data() {
+  //   // Initialize some more reactive variables
+  //   return {
+  //     //actorsToUsernames: {},
+  //   }
+  // },
+  // // watch: {
+  // //   async reads(newReads) {
+  // //     for (const read of newReads) {
+  // //       if (!this.actorsToUsernames[read.actor]) {
+  // //         this.actorsToUsernames[read.actor] = await this.resolver.actorToUsername(read.actor);
+  // //       }
+  // //     }
+  // //     // const loader = document.getElementById('loader-'+ this.messageid);
+  // //     // loader.style.display = "none";
+  // //   }
+  // // },
   computed: {
     reads() {
       let reads = this.readsRaw.filter(
@@ -568,6 +784,8 @@ const Read = {
           read.object == this.messageid) 
         // Your filtering here
       )
+
+      // console.log(this.actorstousernames);
 
       const messagesReads = {};
       const newReads = [];
@@ -589,7 +807,6 @@ const Read = {
   },
   methods: {
     sendRead() {
-      console.log(this.messageid);
 
       const read = {
         type: 'Read',
@@ -598,22 +815,23 @@ const Read = {
         context: [this.messageid]
       }
 
-      console.log(read.actor);
-
       this.$gf.post(read)
+    },
+
+    username(actor) {
+      if (this.actorstousernames[actor]) {
+        return this.actorstousernames[actor];
+      } else {
+        return 'anonUser'
+      }
     }
   }
 }
 
 
 const Reply = {
-  props: ["messageid", "actorid"],
+  props: ["messageid", "actorid", "actorstousernames"],
   template: '#reply',
-
-  created() {
-    this.resolver = new Resolver(this.$gf)
-  },
-
   setup(props) {
     const $gf = Vue.inject('graffiti')
     const messageid = Vue.toRef(props, 'messageid')
@@ -625,21 +843,11 @@ const Reply = {
     // Initialize some more reactive variables
     return {
       replyText: '',
-      actorUsernames: {},
       replying: false,
       viewing: false,
     }
   },
 
-  watch: {
-    async replies(newReplies) {
-      for (const reply of newReplies) {
-        if (!this.actorUsernames[reply.actor]) {
-          this.actorUsernames[reply.actor] = await this.resolver.actorToUsername(reply.actor);
-        }
-      }
-    }
-  },
   computed: {
     replies() {
       let replies = this.repliesRaw.filter(
@@ -659,15 +867,41 @@ const Reply = {
         // Your filtering here
       )
 
-      console.log(replies);
 
       return replies;
     },
   },
   methods: {
-    sendReply() {
-      console.log(this.messageid);
+    viewReplies() {
+      if (!this.viewing) {
+        this.viewing = true;
+        // const messageElem = document.getElementById("message-" + this.messageid);
+        // console.log(messageElem);
+        // messageElem.style.height = ' 35vh';
 
+
+
+        const messageElem = document.getElementById("message-" + this.messageid);
+        const height = messageElem.offsetHeight;
+
+        console.log(height);
+
+        // messageElem.style.maxHeight = 'none';
+        // messageElem.style.overflow = 'visible';
+
+        // element.offsetHeight;
+
+        // messageElem.classList.add('open');
+        // messageElem.style.maxHeight = height + 'px';
+        
+
+      } else {
+        this.viewing = false;
+        // const messageElem = document.getElementById("message-" + this.messageid);
+        // messageElem.style.height = '5vh';
+      }
+    },
+    sendReply() {
       const reply = {
         type: 'Note',
         content: this.replyText,
@@ -676,20 +910,25 @@ const Reply = {
         context: [this.messageid]
       }
 
-      console.log(reply.actor);
-
-      console.log(reply);
       this.$gf.post(reply)
       this.replying = false;
+      this.replyText = '';
     },
     removeReply(reply) {
       this.$gf.remove(reply)
     },
+    username(actor) {
+      if (this.actorstousernames[actor]) {
+        return this.actorstousernames[actor];
+      } else {
+        return 'anonUser'
+      }
+    }
 
   }
 }
 
-app.components = { Name, Like, Read, Reply }
+app.components = { Profile, Name, Like, Read, Reply }
 Vue.createApp(app)
    .use(GraffitiPlugin(Vue))
    .mount('#app')
