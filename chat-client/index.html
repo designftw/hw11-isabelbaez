@@ -147,7 +147,7 @@
 
       <section v-else id="privMessaging">
 
-        <article id="privChats">
+        <article id="prevPrivChats">
 
           Previous Chats:
 
@@ -357,7 +357,7 @@
       <button @click="viewReplies">Hide Replies</button>
       <article v-for="reply of replies">
 
-        <span v-if="!editing"> <b>{{username(reply.actor)}}:</b> {{reply.content}}</span>
+        <span v-if="!editing[reply.id]"> <b>{{username(reply.actor)}}:</b> {{reply.content}}</span>
 
         <span v-else> <b>{{username(reply.actor)}}:</b>        
           <form v-if="reply.actor==$gf.me" @submit.prevent="editReply(reply)">
@@ -365,7 +365,7 @@
           <input type="submit" value="Save"/>
         </form></span>
 
-        <button v-if="reply.actor==$gf.me" @click="editing = true">Edit</button>
+        <button v-if="reply.actor==$gf.me" @click="edit(reply)">Edit</button>
         <button v-if="reply.actor==$gf.me" @click="removeReply(reply)">Delete</button>
 
 

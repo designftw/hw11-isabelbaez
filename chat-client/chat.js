@@ -211,6 +211,7 @@ const app = {
 
     startNewChat() {
       this.usernameRecipient = '';
+      this.recepient = '';
       this.newChat = true;
     },
 
@@ -255,7 +256,17 @@ const app = {
     },
     
     async updateRecipient() {
-      const user = await this.resolver.usernameToActor(this.usernameRecipient);
+      let user;
+
+      for (const userInfo of this.privUsers) {
+        if (this.usernameRecipient === userInfo[1]) {
+          user = userInfo[0];
+        }
+      }
+
+      if (!user) {
+        user = await this.resolver.usernameToActor(this.usernameRecipient);
+      }
 
       console.log(this.usernameRecipient);
       console.log(user);
@@ -302,41 +313,61 @@ const app = {
     },
 
     async getPrivateChats() {
+      console.log(this.privChats);
+
+      setTimeout(function(privchats) {
+        console.log(  'WEPAAA', privchats);
+      }, 1000, [this.privChats]);
+
       setTimeout(this.updatePrivChats, 100);
     },
 
     async updatePrivChats() {
+      console.log(this.privChats);
       const userChats = [];
+      
       for (const actor of this.privChats) {
-        userChats.push([actor[0], await this.resolver.actorToUsername(actor[0])]); 
+        let username = this.actorsToUsernames[actor[0]];
+
+        if (!username) {
+          username = await this.resolver.actorToUsername(actor[0]);
+        }
+        console.log(this.actorsToUsernames[actor[0]]);
+        console.log('UPDATING', username);
+        console.log('UPDATING', actor[0]);
+
+        // while (!username) {
+        //   username = await this.resolver.actorToUsername(actor[0]);
+        // }
+        userChats.push([actor[0], username]); 
       }
       this.privUsers = userChats;
     },
 
-    async getPrivateMessages() {
-      // Do some more filtering for private messaging
-      const messages = await this.messages.filter(async m=>
-        // Is the message private?
-        m.bto &&
-        // Is the message to exactly one person?
-        m.bto.length == 1 &&
-        (
-          // Is the message to the recipient?
-          m.bto[0] == this.usernameRecipient ||
-          // Or is the message from the recipient?
-          m.actor == this.usernameRecipient
-        ))
+    // async getPrivateMessages() {
+    //   // Do some more filtering for private messaging
+    //   const messages = await this.messages.filter(async m=>
+    //     // Is the message private?
+    //     m.bto &&
+    //     // Is the message to exactly one person?
+    //     m.bto.length == 1 &&
+    //     (
+    //       // Is the message to the recipient?
+    //       m.bto[0] == this.usernameRecipient ||
+    //       // Or is the message from the recipient?
+    //       m.actor == this.usernameRecipient
+    //     ))
 
-      //messages.sort((m1, m2)=> new Date(m2.published) - new Date(m1.published)).slice(0,10);
-    },
+    //   //messages.sort((m1, m2)=> new Date(m2.published) - new Date(m1.published)).slice(0,10);
+    // },
 
-    async privMessages() {
-      let messages;
-      if (this.privateMessaging) {
-        messages = await this.getPrivateMessages();
-      }
-      return messages;
-    },
+    // async privMessages() {
+    //   let messages;
+    //   if (this.privateMessaging) {
+    //     messages = await this.getPrivateMessages();
+    //   }
+    //   return messages;
+    // },
 
     async sendMessage() {
       const message = {
@@ -390,6 +421,8 @@ const app = {
         setTimeout(msgMoveBack, 200, [messageId]);
       }
       setTimeout(msgMove, 300, [postedMsg.id]);
+
+      this.getPrivateChats();
     
       // messageElem.style.transform = 'translate(50vw)'
     },
@@ -403,6 +436,7 @@ const app = {
       messageElem.style.transform = 'translate(50vw)'
 
       this.$gf.remove(message);
+      this.getPrivateChats();
     },
 
     startEditMessage(message) {
@@ -870,7 +904,7 @@ const Reply = {
       replying: false,
       viewing: false,
       editReplyText: '',
-      editing: false,
+      editing: {},
     }
   },
 
@@ -893,11 +927,18 @@ const Reply = {
         // Your filtering here
       )
 
+      for (const reply of replies) {
+        this.editing[reply.id] = false;
+      }
 
       return replies;
     },
   },
   methods: {
+    edit(reply) {
+      this.editing[reply.id] = true;
+      this.editReplyText = reply.content;
+    },
     viewReplies() {
       if (!this.viewing) {
         this.viewing = true;
@@ -921,6 +962,10 @@ const Reply = {
 
       } else {
         this.viewing = false;
+
+        for (const reply of this.replies) {
+          this.editing[reply.id] = false;
+        }
         // const messageElem = document.getElementById("message-" + this.messageid);
         // messageElem.style.height = '5vh';
       }
@@ -937,14 +982,16 @@ const Reply = {
       this.$gf.post(reply)
       this.replying = false;
       this.replyText = '';
+      this.viewing = true;
     },
     editReply(reply) {
       // Save the text (which will automatically
       // sync with the server)
-      reply.content = this.editReplyText
+      console.log('here');
+      reply.content = this.editReplyText;
       // And clear the edit mark
       this.editReplyText = '';
-      this.editing = false;
+      this.editing[reply.id] = false;
     },
     removeReply(reply) {
       this.$gf.remove(reply)
