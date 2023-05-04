@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script type="module" src="./chat.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <h1>
+      EduChat
+    </h1>
+
+    <a href="index.html">Back</p></a>
+
+    <!-- If we're not logged in, hide everything except the login button -->
+    <template v-if="$gf.me">
+      <div>
+        <!-- We display names in multiple places, so we made a -->
+        <!-- reusable <name></name> component. -->
+        <!-- See below for the template. -->
+        <profile :actor="$gf.me" :editable="true" :downloadedimages="downloadedImages"> </profile>
+        <p><name :actor="$gf.me" :editable="true"></name></p>
+
+        <div>
+          <label for="username">Change your username: </label>
+          <input id="username" v-model="username" type="text" @input="badUsername = false">
+          <button id="userButton" @click="changeUsername"> Change </button>
+          <div style="background-color:red; width:fit-content; color:white" v-if="badUsername">
+            Username not available.
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <p>
+      <button @click="$gf.toggleLogIn">
+        <!-- If we have a user ID, we're logged in so show "Log Out" -->
+        <!-- Otherwise, show "Log In" -->
+        {{ $gf.me? 'Log Out' : 'Log In' }}
+      </button>
+    </p>
+
+    
+  </div>
+
+  <template id="name">
+    <span v-if="!editing">
+
+      <!-- If we're not editing the name-->
+      <!-- Display the profile's name, if it exists -->
+      <!-- or anonymous if it doesn't -->
+      {{ profile? profile.name : 'Anonymous' }}
+
+      <!-- Also if the name is "editable" add an edit button -->
+      <button v-if="editable" @click="editName">
+        Edit Name
+      </button>
+    </span>
+
+    <!-- If we're in the editing state, create something to edit the name-->
+    <form v-else @submit.prevent="saveName">
+      <input v-model="editText"/>
+      <input type="submit" value="Save Name"/>
+    </form>
+  </template>
+
+
+  <template id="profile">
+    <span v-if="!editing">
+      <!-- If we're not editing the name-->
+      <!-- Display the profile's name, if it exists -->
+      <!-- or anonymous if it doesn't -->
+
+      <div v-if="profilePic">
+        <img class="authorPic" :src="downloadedPic"/>
+      </div>
+
+      <div v-else>
+        <img class="authorPic" src="missingPic.webp"/>
+      </div>
+
+      <!-- {{ profilePic? '' : 'Anonymous' }} -->
+
+      <!-- Also if the name is "editable" add an edit button -->
+      <button v-if="editable" @click="editProfilePic">
+        Edit Profile Pic
+      </button>
+    </span>
+
+    <!-- If we're in the editing state, create something to edit the name-->
+    <!-- <form v-else @submit.prevent="saveProfilePic"> -->
+      <!-- <form v-else @submit.prevent="saveProfilePic"> -->
+      <div v-else >
+        <input type="file" accept="image/png, image/jpeg" @change="onImageAttachment"/>
+        <button @click="saveProfilePic"> Change Profile Pic </button>
+      </div>
+      <!-- </form> -->
+    <!-- </form> -->
+  </template>
+</body>
+</html>

@@ -1,6 +1,15 @@
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.privChats { 
+    width: 100%;
+}
+
 .privChat { 
     height: 2.5vh;
-    width: 10vw;
+    width: 20vw;
     margin-top: 1vh;
     background-color: rgb(206, 206, 206);
     border-radius: 3px;
@@ -11,7 +20,13 @@
 .privChat:hover { 
     background-color: rgb(157, 157, 157);
     color: white;
-    width: 20vw;
+    width: 30vw;
+}
+
+#privChatMessages {
+    overflow: auto;
+    width: 40vw;
+    height: 60vh;
 }
 
 /* .privChat: { 
@@ -22,7 +37,9 @@
 
 #privMessaging {
     display: flex;
-    justify-content: space-evenly;
+    justify-content: space-between;
+    padding-left: 10%;
+    padding-right: 10%;
 }
 
 .message {
@@ -54,7 +71,19 @@
     white-space: nowrap;
     color: white;
     transition: all 0.2s ease-out;
-    /* transform: translate(50vw); */
+    transform: translate(40%);
+}
+
+.myMessage-public {
+    background-color: rgb(0, 102, 255);
+    margin-top: 5vh;
+    border-radius: 10px;
+    width: fit-content;
+    padding: 3%;
+    white-space: nowrap;
+    color: white;
+    transition: all 0.2s ease-out;
+    transform: translate(100%);
 }
 
 .authorInfo {
@@ -94,6 +123,17 @@
     color: white;
   }
 
+  button:hover {
+    border-radius: 10px;
+    border: 1px solid rgb(94, 94, 94);
+    background-color: rgb(94, 94, 94);
+    color: white;
+  }
+
+  #username {
+    transition: all 0.5s;
+  }
+
   .likeBtn {
     background-color: rgb(203, 203, 203);
     border: none;
@@ -114,3 +154,20 @@
     font-size: 2vw;
     transition: font-size 1s;
   }
+
+  input[type=text]  {
+    background-color: rgb(238, 238, 238);
+    border-radius: 20px;
+    padding: 1%;
+    border: none;
+  }
+
+  input[type=submit]  {
+    background-color: rgb(0, 102, 255);
+    color: white;
+    font-weight: bolder;
+    border-radius: 20px;
+    padding: 1%;
+    border: none;
+  }
+  

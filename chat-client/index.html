@@ -10,43 +10,14 @@
       EduChat
     </h1>
 
-    <p>
-      <button @click="$gf.toggleLogIn">
-        <!-- If we have a user ID, we're logged in so show "Log Out" -->
-        <!-- Otherwise, show "Log In" -->
-        {{ $gf.me? 'Log Out' : 'Log In' }}
+      <button v-if="!$gf.me" @click="$gf.toggleLogIn">
+        Log In
       </button>
-    </p>
 
     <!-- If we're not logged in, hide everything except the login button -->
     <template v-if="$gf.me">
 
-      <div>
-        <!-- We display names in multiple places, so we made a -->
-        <!-- reusable <name></name> component. -->
-        <!-- See below for the template. -->
-        <p>My Name Is: <name :actor="$gf.me" :editable="true"></name></p>
-        <profile :actor="$gf.me" :editable="true" :downloadedimages="downloadedImages">
-      
-        <div>
-          <input id="username" v-model="username" type="text" @input="badUsername = false">
-          <button id="userButton" @click="changeUsername"> Change Username </button>
-          <div style="background-color:red; width:fit-content; color:white" v-if="badUsername">
-            Username not available.
-          </div>
-        </div>
-
-      </div>
-
-      <!-- <p>
-        <label for="search">
-          Search Users:
-        </label>
-        <input id="search" v-model="search"/>
-        <div v-for="users of searchedUsers">
-
-        </div>
-      </p> -->
+      <p> <profile :actor="$gf.me" :downloadedimages="downloadedImages"> </profile> <a href="profile.html"><name :actor="$gf.me"></name></p></a>
 
       <p>
         Change chat format:
@@ -63,7 +34,7 @@
           Change the channel you're chatting in:
         </label>
 
-        <input id="channel" v-model="channel"/>
+        <input type="text" id="channel" v-model="channel"/>
         <button v-if="channel !== 'default'" id="backDefault" @click="channel='default'"> Back to Default Channel </button>
         <br> <br>
         <label for="userChannels">
@@ -83,7 +54,7 @@
 
         <!-- A form for sending messages -->
         <form @submit.prevent="sendMessage">
-          <input v-model="messageText" placeholder="Type a message..."/>
+          <input  type="text" v-model="messageText" placeholder="Type a message..."/>
           <input type="file" accept="image/png, image/jpeg" @change="onImageAttachment"/>
           <input type="submit" value="Send"/>
         </form>
@@ -92,11 +63,11 @@
           <!-- List all the messages -->
           <article v-for="message, i of messages" :key="message.id">
 
-            <div :id="`message-${message.id}`" class="myMessage" v-if="message.actor == $gf.me">
+            <div :id="`message-${message.id}`" class="myMessage-public" v-if="message.actor == $gf.me">
 
                           <!-- Display and edit form if we're editing a message -->
               <form v-if="editID==message.id" @submit.prevent="saveEditMessage(message)">
-                <input v-model="editText">
+                <input type="text" v-model="editText">
                 <input type="submit" value="Save"/>
               </form>
 
@@ -176,7 +147,7 @@
 
       <section v-else id="privMessaging">
 
-        <div id="privChats">
+        <article id="privChats">
 
           Previous Chats:
 
@@ -184,7 +155,7 @@
             <name :actor="id[0]"></name>
           </article>
 
-        </div>
+        </article>
 
         <div>
 
@@ -194,7 +165,7 @@
             <label for="recipient">
               Message to:
             </label>
-            <input id="recipient" v-model="usernameRecipient" @input="updateRecipient"/>
+            <input type="text" id="recipient" v-model="usernameRecipient" @input="updateRecipient"/>
             <div style="background-color:red; width:fit-content; color:white" v-if="notifyBad">
               Username not valid.
             </div>
@@ -203,23 +174,24 @@
   
             <br><br>
   
-            <form @submit.prevent="sendMessage">
-              <input v-model="messageText" placeholder="Type a message..."/>
-              <input type="submit" value="Send"/>
-            </form>
+          <form @submit.prevent="sendMessage">
+            <input  type="text" v-model="messageText" placeholder="Type a message..."/>
+            <input type="file" accept="image/png, image/jpeg" @change="onImageAttachment"/>
+            <input type="submit" value="Send"/>
+          </form>
   
           </div>
 
           <!-- List all the messages -->
-          <article>
+          <div id="privChatMessages">
             <!-- List all the messages -->
             <article v-for="message, i of messages" :key="message.id">
   
-              <div :id="`message-${message.id}`" class="myMessage" v-if="message.actor == $gf.me">
+              <div :id="`myMessage-${message.id}`" class="myMessage" v-if="message.actor == $gf.me">
   
                             <!-- Display and edit form if we're editing a message -->
                 <form v-if="editID==message.id" @submit.prevent="saveEditMessage(message)">
-                  <input v-model="editText">
+                  <input type="text" v-model="editText">
                   <input type="submit" value="Save"/>
                 </form>
   
@@ -293,7 +265,7 @@
                 </div>
   
             </article>
-          </article>
+          </div>
         </div>
 
       </section>
@@ -317,7 +289,7 @@
 
     <!-- If we're in the editing state, create something to edit the name-->
     <form v-else @submit.prevent="saveName">
-      <input v-model="editText"/>
+      <input type="text" v-model="editText"/>
       <input type="submit" value="Save Name"/>
     </form>
   </template>
@@ -375,7 +347,7 @@
 <template id="reply">
   <button v-if="!replying" @click="replying = true">Reply</button>
   <div v-else>
-    <input v-model="replyText" placeholder="Type a reply..."/>
+    <input type="text" v-model="replyText" placeholder="Type a reply..."/>
     <button @click="sendReply">Send</button>
   </div>
 
@@ -385,9 +357,17 @@
       <button @click="viewReplies">Hide Replies</button>
       <article v-for="reply of replies">
 
-        <b>{{username(reply.actor)}}:</b> {{reply.content}}
+        <span v-if="!editing"> <b>{{username(reply.actor)}}:</b> {{reply.content}}</span>
 
+        <span v-else> <b>{{username(reply.actor)}}:</b>        
+          <form v-if="reply.actor==$gf.me" @submit.prevent="editReply(reply)">
+          <input type="text" v-model="editReplyText">
+          <input type="submit" value="Save"/>
+        </form></span>
+
+        <button v-if="reply.actor==$gf.me" @click="editing = true">Edit</button>
         <button v-if="reply.actor==$gf.me" @click="removeReply(reply)">Delete</button>
+
 
       </article>
     </div>

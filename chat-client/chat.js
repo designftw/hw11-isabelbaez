@@ -52,7 +52,8 @@ const app = {
       notifyBad: false,
       badUsername: false,
       file: null,
-      downloadedImages: {}
+      downloadedImages: {},
+      usernameChanged: false
     }
   },
   
@@ -202,6 +203,7 @@ const app = {
     },
 
     async openChat(id) {
+      console.log(this.privUsers);
       this.usernameRecipient = id;
       this.newChat = true;
       await this.updateRecipient();
@@ -254,6 +256,9 @@ const app = {
     
     async updateRecipient() {
       const user = await this.resolver.usernameToActor(this.usernameRecipient);
+
+      console.log(this.usernameRecipient);
+      console.log(user);
 
       if (user) {
         this.recepient = user; 
@@ -361,28 +366,40 @@ const app = {
       // Send!
       const postedMsg = this.$gf.post(message);
 
+      this.messageText = '';
       function msgMove(messageId) {
-
+        
         function msgMoveBack(messageId) {
-          const messageElem = document.getElementById("message-" + messageId);
-          messageElem.style.transform = 'translate(0vw)';
+          let messageElem = document.getElementById("message-" + messageId);
+
+          if (!messageElem) {
+            messageElem = document.getElementById("myMessage-" + messageId);
+            messageElem.style.transform = 'translate(40%)';
+          } else {
+            messageElem.style.transform = 'translate(100%)';
+          }
         }
 
-        const messageElem = document.getElementById("message-" + messageId);
-        messageElem.style.transform = 'translate(20vw)';
+        let messageElem = document.getElementById("message-" + messageId);
 
+        if (!messageElem) {
+          messageElem = document.getElementById("myMessage-" + messageId);
+        }
+
+        messageElem.style.transform = 'translate(0%)';
         setTimeout(msgMoveBack, 200, [messageId]);
       }
       setTimeout(msgMove, 300, [postedMsg.id]);
     
-
-
       // messageElem.style.transform = 'translate(50vw)'
     },
 
     removeMessage(message) {
-      const messageElem = document.getElementById("message-" + message.id);
-      console.log(messageElem);
+      let messageElem = document.getElementById("message-" + message.id);
+
+      if (!messageElem) {
+        messageElem = document.getElementById("myMessage-" + message.id);
+      }
       messageElem.style.transform = 'translate(50vw)'
 
       this.$gf.remove(message);
@@ -407,6 +424,13 @@ const app = {
       try {
         this.badUsername = false;
         await this.resolver.requestUsername(this.username);
+        const userInput = document.getElementById('username');
+
+        userInput.style.backgroundColor = 'rgb(165, 236, 165)';
+        setTimeout(function () {
+          userInput.style.backgroundColor = 'rgb(238, 238, 238)';
+        }, 700);
+
       } catch (e) {
         this.badUsername = true;
       }
@@ -845,6 +869,8 @@ const Reply = {
       replyText: '',
       replying: false,
       viewing: false,
+      editReplyText: '',
+      editing: false,
     }
   },
 
@@ -879,8 +905,6 @@ const Reply = {
         // console.log(messageElem);
         // messageElem.style.height = ' 35vh';
 
-
-
         const messageElem = document.getElementById("message-" + this.messageid);
         const height = messageElem.offsetHeight;
 
@@ -913,6 +937,14 @@ const Reply = {
       this.$gf.post(reply)
       this.replying = false;
       this.replyText = '';
+    },
+    editReply(reply) {
+      // Save the text (which will automatically
+      // sync with the server)
+      reply.content = this.editReplyText
+      // And clear the edit mark
+      this.editReplyText = '';
+      this.editing = false;
     },
     removeReply(reply) {
       this.$gf.remove(reply)
