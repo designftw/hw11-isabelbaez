@@ -97,14 +97,14 @@
   .likeBtn {
     background-color: rgb(203, 203, 203);
     border: none;
-    font-size: 2vw;
+    font-size: 1.2vw;
     transition: font-size 1s;
   }
 
   .dislikeBtn {
     background-color: rgb(203, 203, 203);
     border: none;
-    font-size: 2vw;
+    font-size: 1.2vw;
     transition: font-size 1s;
   }
 

@@ -693,13 +693,13 @@ const Like = {
 
         function smallSize(messageId) {
           const dislikeElem = document.getElementById("dislike-" + messageId);
-          dislikeElem.style.fontSize = '2vw';
+          dislikeElem.style.fontSize = '1.2vw';
           console.log("dislike-" + messageId);
           console.log(dislikeElem);
         }
 
         const dislikeElem = document.getElementById("dislike-" + messageId);
-        dislikeElem.style.fontSize = '3vw';
+        dislikeElem.style.fontSize = '2vw';
         console.log("dislike-" + messageId);
         console.log(dislikeElem);
 
