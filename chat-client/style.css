@@ -3,8 +3,201 @@ body {
     font-family: Arial, Helvetica, sans-serif;
 }
 
+body,html {
+  margin:0;
+  padding:0;
+}
+
+#navBar {
+  background-color: white;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  background-color: rgb(233, 233, 233);
+}
+
+@media (max-width: 800px) {
+  #navBar {
+    font-size: 2.5vh;
+  }
+  #navBar > h1 {
+    font-size: 5.5vh;
+  }
+}
+
+@media (min-width: 801px) {
+  #navBar {
+    font-size: 1.8vh;
+  }
+  #navBar > h1 {
+    font-size: 3vh;
+  }
+}
+
+#navBar > h1 {
+  padding-left: 10%;
+}
+
+#navBar > article {
+  padding-right: 2%;
+  padding-top: 1%;
+}
+
+#navBar > article:hover {
+  background-color: rgb(157, 157, 157);
+}
+
+#navBar > article > a {
+  text-decoration: none;
+  color: black;
+}
+
+#navBar > article > a > #profile > span > div > .authorPic:hover {
+  height: 5vh;
+}
+
+#main {
+  font-size: 1.8vh;
+  display: flex;
+  justify-content: space-evenly;
+  height: 85.3vh;
+}
+
+.groupStuff {
+  background-color: rgb(233, 233, 233);
+  display: block;
+  width: 100%;
+  height: 100%;
+  transition: width 1s;
+}
+
+.groupChats {
+  background-color: rgb(233, 233, 233);
+  display: block;
+  width: 100%;
+  height: 85vh;
+}
+
+.msgImg {
+  max-width: 50%;
+}
+
 .prevPrivChats { 
     width: 100%;
+}
+
+.group { 
+  font-size: 1.8vh;
+  height: 7vh;
+  width: 90%;
+  border-bottom: solid 1px rgb(157, 157, 157);
+  /* background-color: rgb(206, 206, 206); */
+  padding: 5%;
+}
+
+.initGroup{
+  font-size: 1.8vh;
+  height: 7vh;
+  width: 90%;
+  /* background-color: rgb(206, 206, 206); */
+  border-bottom: solid 1px rgb(157, 157, 157);
+  padding: 5%;
+}
+
+.initGroup:hover{
+  background-color: rgb(157, 157, 157);
+  color: white;
+}
+
+
+.group:hover { 
+  background-color: rgb(157, 157, 157);
+  color: white;
+}
+
+#main > section {
+  font-size: 2vh;
+}
+
+#groupInfo {
+  height: 6.5vh;
+}
+
+#noParticipants {
+  font-size: 2.3vh;
+  display: flex;
+  justify-content: space-between;
+}
+
+#yesParticipants {
+  font-size: 2.3vh;
+  display: flex;
+}
+
+#noParticipants > p {
+  margin-left: 32%;
+}
+
+#addAllowedArt > button, #addAllowedArt > article > button  {
+  margin-top: 5%;
+  font-size: 1.8vh;
+  margin-left: 2%;
+}
+
+#participantsBtn {
+  font-size: 1.8vh;
+  margin-right: 5%;
+  margin-top: 2vh;
+  height: fit-content;
+}
+
+#backBtn {
+  font-size: 1.8vh;
+  margin-top: 5%;
+  margin-left: 5%;
+  margin-right: 5%;
+  height: fit-content;
+}
+
+#addAllowedArt > article > article > input {
+  font-size: 1.8vh;
+
+}
+
+#addAllowedArt > article > article > button {
+  font-size: 1.8vh;
+  margin-left: 2vw;
+}
+
+#profilePage, #profilePage > input, .profileBtn{
+  font-size: 1.8vh;
+}
+
+#profilePage {
+  font-size: 1.8vh;
+  padding: 5%;
+}
+
+
+#addAllowedArt > article > article {
+  background-color: white;
+  padding: 5%;
+  margin-top: 5%;
+  border-radius: 10px;
+  box-shadow: 0px -5px 10px 1px rgba(0, 0, 0, 0.408), 0px 5px 10px 1px rgba(0, 0, 0, 0.408);
+}
+
+.groupNameChangeBtn, .removeParticipantBtn {
+  font-size: 1.8vh;
+}
+
+#main > section > p {
+  margin-left: 10%;
+}
+
+
+#main > div {
+  width: 100%;
 }
 
 .privChat { 
@@ -27,6 +220,119 @@ body {
     overflow: auto;
     width: 40vw;
     height: 60vh;
+}
+
+#chatMessages {
+  font-size: 1.2vh;
+  overflow: auto;
+  width: 65vw;
+  height: 80%;
+  display: flex;
+  flex-direction: column; 
+  padding-right: 2vw;
+  padding-left: 4vw;
+}
+
+#participants{
+  width: 65vw;
+  height: 80%;
+  font-size: 1.5vh;
+  padding-right: 2vw;
+  padding-left: 4vw;
+}
+
+#newMessageForm {
+  background-color: white;
+  padding: 5%;
+  height: 10%;
+}
+
+#newMessageForm > form > input[type=text] {
+  width: 80%;
+  font-size: 1.8vh;
+  margin-right: 1vh;
+}
+
+#newMessageForm > form > input {
+  font-size: 1.8vh;
+}
+
+#newMessageForm > form {
+  font-size: 1.8vh;
+}
+
+.newChatBtn {
+  font-size: 1.8vh;
+  background-color: rgb(0, 102, 255);
+  margin-top: 20%;
+  margin-left: 10%;
+  padding: 3%;
+}
+
+#groupCreation {
+  background-color: white;
+  position: absolute;
+  top: 0px; left: 0px;
+
+  margin-top: 20vh;
+
+  width: 80%;
+  margin-left: 5%;
+  padding: 5%;
+  border-radius: 20px;
+  font-size: 2vh;
+}
+
+#groupCreation > input, #groupCreation > button {
+  margin-top: 5%;
+  font-size: 1.8vh;
+  margin-left: 2%;
+}
+
+#groupCreation > button {
+  padding: 1%;
+  padding-left: 2%;
+  padding-right: 2%;
+  border-radius: 20px;
+}
+
+#groupCreation > div > p {
+  font-size: 3vh;
+}
+
+#groupCreation > div > button {
+  height: fit-content;
+  padding: 1%;
+}
+
+
+.participant {
+  background-color: rgb(206, 206, 206);
+  width: fit-content;
+  margin-top: 2%;
+  padding: 2%;
+  padding-right: 5%;
+  border-radius: 10px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.participant > button {
+  margin-top: 0;
+  margin-left: 20%;
+}
+
+#createBtn{
+  background-color: rgb(0, 102, 255);
+}
+
+#groupCreationBackdrop {
+  background-color: rgba(0, 0, 0, 0.383);
+  position: absolute;
+  top: 0px; left: 0px;
+  width: 100%;
+  height: 100%;
+  margin-bottom: 20vh;
 }
 
 /* .privChat: { 
@@ -52,6 +358,7 @@ body {
     max-height: none;
     overflow: visible;
     transition: all 0.5s ease-out;
+    font-size: 1.5vh;
     /* height: fit-content;
     max-height: 50vh; 
     transition: max-height 0.5s ease; */
@@ -62,7 +369,7 @@ body {
     transform: translate(50vw) ; */
 }
 
-.myMessage {
+/* .myMessage {
     background-color: rgb(0, 102, 255);
     margin-top: 5vh;
     border-radius: 10px;
@@ -71,19 +378,70 @@ body {
     white-space: nowrap;
     color: white;
     transition: all 0.2s ease-out;
-    transform: translate(40%);
-}
+    transform: translate(70px);
+} */
 
 .myMessage-public {
     background-color: rgb(0, 102, 255);
     margin-top: 5vh;
     border-radius: 10px;
     width: fit-content;
+    max-width: 70%;
     padding: 3%;
     white-space: nowrap;
     color: white;
     transition: all 0.2s ease-out;
-    transform: translate(100%);
+    word-break: break-all;
+    overflow-wrap: break-word;
+    margin-left: auto;
+    font-size: 1.5vh;
+    /* margin-right: 10%; */
+    /* position: relative;
+    float: right; */
+}
+
+.myMessage-public > div > button {
+  font-size: 1.5vh;
+}
+
+.replyObject > button {
+  font-size: 1.5vh;
+}
+
+.replyObject > div > input {
+  font-size: 1.5vh;
+}
+
+.replyObject > div > button {
+  font-size: 1.5vh;
+}
+
+.replyObject > div > div > button {
+  font-size: 1.5vh;
+}
+
+.replyObject > div > div > article > div> button, .replyObject > div > div > article > span > form > input  {
+  font-size: 1.5vh;
+}
+
+
+.myMessage-public > form > input {
+  font-size: 1.5vh;
+}
+
+.message > button {
+  font-size: 1.5vh;
+}
+
+.replyClass {
+  margin-top: 5%;
+  margin-bottom: 5%;
+}
+
+.messageContent{
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .authorInfo {

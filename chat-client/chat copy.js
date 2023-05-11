@@ -17,10 +17,12 @@ const app = {
     const channel = Vue.ref('default')
 
     // And a flag for whether or not we're private-messaging
+    const privateMessaging = Vue.ref(false)
 
     // If we're private messaging use "me" as the channel,
     // otherwise use the channel value
     const $gf = Vue.inject('graffiti')
+    //const context = Vue.computed(()=> privateMessaging.value? [$gf.me] : [channel.value])
 
     const context = Vue.computed(()=> [channel.value])
 
@@ -28,7 +30,7 @@ const app = {
     const { objects: messagesRaw } = $gf.useObjects(context)
 
     //const { objects: allMessagesRaw } = $gf.useObjects()
-    return { channel, messagesRaw }
+    return { channel, privateMessaging, messagesRaw }
   },
 
   data() {
@@ -55,33 +57,14 @@ const app = {
       downloadedImages: {},
       usernameChanged: false,
       myGroups: null,
-      currGroup: {id: '', name: '', participants: []},
-      seeingParticipants: {value: false},
+      currGroup: {id: ''}
     }
   },
   
   watch: {
     'currGroup.id': function() {
-
-        if (this.channel == 'default') {
-          this.channel = this.currGroup.id;
-          const groupp = document.getElementsByClassName("groupStuff");
-          groupp[0].style.width = "29%"
-          
-          console.log(groupp[0].style.width);
-
-
-          setTimeout(function () {
-            const groupp = document.getElementsByClassName("groupStuff");
-            groupp[0].style.transition = "none"
-            groupp[0].style.width = "100%"
-            const mainSec = document.getElementById("mainSection");
-            mainSec.style.display = "block";
-          }, 2000)
-        } else {
-          this.channel = this.currGroup.id;
-        }
-
+        console.log('WATCHING', this.currGroup);
+        this.channel = this.currGroup.id;
     },
     async messages(newMessages) {
       for (const message of newMessages) {
@@ -91,18 +74,20 @@ const app = {
       }
 
       let imgMessages = newMessages.filter(m=>
-        m.attachment && m.attachment.type && m.attachment.type == "Image"
+        m.attachment && m.attachment.type == "Image"
         && typeof m.attachment.magnet == "string"
       );
       for (const imgMessage of imgMessages) {
         if (!this.downloadedImages[imgMessage.attachment.magnet]) {
 
           try {
+            // console.log('start message image', imgMessage.content)
             const imgURI = await this.$gf.media.fetch(imgMessage.attachment.magnet);
+            // console.log('got message image', imgMessage.content)
             const url = URL.createObjectURL(imgURI);
             this.downloadedImages[imgMessage.attachment.magnet] = url;
           } catch (e) {
-            console.log(e);
+            //console.log(e);
           }
 
         }
@@ -126,6 +111,48 @@ const app = {
           // Is that property a string?
           typeof m.content=='string') 
 
+      // Do some more filtering for private messaging
+      if (this.privateMessaging) {
+
+        const privChats = [];
+        const seen = [];
+
+        const single =  messages.filter(m=>
+          // Is the message private?
+          m.bto &&
+          // Is the message to exactly one person?
+          m.bto.length == 1)
+
+
+        for (const message of single) {
+          if  (message.bto && message.bto.length === 1) {
+            if (message.bto[0] !== this.$gf.me && !seen.includes(message.bto[0]))  {
+              privChats.push([message.bto[0],'']);
+              seen.push(message.bto[0]);
+            }
+    
+            if (message.actor !== this.$gf.me && !seen.includes(message.actor))  {
+              privChats.push([message.actor,'']);
+              seen.push(message.actor);
+            }
+          }
+        }
+
+        this.privChats = privChats;
+
+        messages = messages.filter(m=>
+          // Is the message private?
+          m.bto &&
+          // Is the message to exactly one person?
+          m.bto.length == 1 &&
+          (
+            // Is the message to the recipient?
+            m.bto[0] == this.recepient ||
+            // Or is the message from the recipient?
+            m.actor == this.recepient
+          ))
+      }
+
       messages = messages
         // Sort the messages with the
         // most recently created ones first
@@ -133,10 +160,21 @@ const app = {
         // Only show the 10 most recent ones
         .slice(0,10)
 
-        .sort((m1, m2)=> new Date(m1.published) - new Date(m2.published))
+        // for (const message of messages) {
+        //   const read = {
+        //     type: 'Read',
+        //     object: message.id,
+        //     actor: this.$gf.me,
+        //     context: [message.id]
+        //   }
+    
+        //   this.$gf.post(read)
+        // }
+
       return messages
     },
   },
+
   methods: {
 
     timeSincePosted(past) {
@@ -173,6 +211,7 @@ const app = {
     },
 
     async openChat(id) {
+      console.log(this.privUsers);
       this.usernameRecipient = id;
       this.newChat = true;
       await this.updateRecipient();
@@ -182,14 +221,6 @@ const app = {
       this.usernameRecipient = '';
       this.recepient = '';
       this.newChat = true;
-    },
-
-    scrollMessages() {
-      const chatMessages = document.getElementById("chatMessages");
-      chatMessages.style.boxShadow = "inset 0px 7px 10px -5px #999999, inset 0px -7px 10px -5px #999999";
-      setTimeout(function () {
-        chatMessages.style.boxShadow = "none";
-      }, 7000);
     },
 
     async updateMessages() {
@@ -208,6 +239,20 @@ const app = {
         typeof m.content=='string') 
 
         // Do some more filtering for private messagin
+
+        if (this.privateMessaging) {
+          messages = await messages.filter(async m=>
+            // Is the message private?
+            m.bto &&
+            // Is the message to exactly one person?
+            m.bto.length == 1 &&
+            (
+              // Is the message to the recipient?
+              m.bto[0] == await this.resolver.usernameToActor(this.usernameRecipient) ||
+              // Or is the message from the recipient?
+              m.actor == await this.resolver.usernameToActor(this.usernameRecipient)
+            ))
+        }
         messages = messages
           // Sort the messages with the
           // most recently created ones first
@@ -230,6 +275,9 @@ const app = {
       if (!user) {
         user = await this.resolver.usernameToActor(this.usernameRecipient);
       }
+
+      console.log(this.usernameRecipient);
+      console.log(user);
 
       if (user) {
         this.recepient = user; 
@@ -273,14 +321,17 @@ const app = {
     },
 
     async getPrivateChats() {
+      console.log(this.privChats);
 
       setTimeout(function(privchats) {
+        console.log(  'WEPAAA', privchats);
       }, 1000, [this.privChats]);
 
       setTimeout(this.updatePrivChats, 100);
     },
 
     async updatePrivChats() {
+      console.log(this.privChats);
       const userChats = [];
       
       for (const actor of this.privChats) {
@@ -289,6 +340,9 @@ const app = {
         if (!username) {
           username = await this.resolver.actorToUsername(actor[0]);
         }
+        console.log(this.actorsToUsernames[actor[0]]);
+        console.log('UPDATING', username);
+        console.log('UPDATING', actor[0]);
 
         // while (!username) {
         //   username = await this.resolver.actorToUsername(actor[0]);
@@ -297,6 +351,31 @@ const app = {
       }
       this.privUsers = userChats;
     },
+
+    // async getPrivateMessages() {
+    //   // Do some more filtering for private messaging
+    //   const messages = await this.messages.filter(async m=>
+    //     // Is the message private?
+    //     m.bto &&
+    //     // Is the message to exactly one person?
+    //     m.bto.length == 1 &&
+    //     (
+    //       // Is the message to the recipient?
+    //       m.bto[0] == this.usernameRecipient ||
+    //       // Or is the message from the recipient?
+    //       m.actor == this.usernameRecipient
+    //     ))
+
+    //   //messages.sort((m1, m2)=> new Date(m2.published) - new Date(m1.published)).slice(0,10);
+    // },
+
+    // async privMessages() {
+    //   let messages;
+    //   if (this.privateMessaging) {
+    //     messages = await this.getPrivateMessages();
+    //   }
+    //   return messages;
+    // },
 
     async sendMessage() {
       const message = {
@@ -308,8 +387,12 @@ const app = {
       // channel(s) the object is posted in
       // You can post in more than one if you want!
       // The bto field makes messages private
-
-      message.context = [this.channel]
+      if (this.privateMessaging) {
+        message.bto = [this.recepient]
+        message.context = [this.$gf.me, this.recepient]
+      } else {
+        message.context = [this.channel]
+      }
 
       if (this.file) {
         const fileURI = await this.$gf.media.store(this.file);
@@ -345,12 +428,7 @@ const app = {
         messageElem.style.transform = 'translate(0%)';
         setTimeout(msgMoveBack, 200, [messageId]);
       }
-      //setTimeout(msgMove, 300, [postedMsg.id]);
-
-      setTimeout(function () {
-        const messageCotainer = document.getElementById("chatMessages");
-        messageCotainer.scrollTop = messageCotainer.scrollHeight - messageCotainer.clientHeight;
-      }, 400);
+      setTimeout(msgMove, 300, [postedMsg.id]);
 
       this.getPrivateChats();
     
@@ -450,22 +528,41 @@ const Profile = {
   watch: {
     async profilePic(newProfilePic) {
 
+      // if (!this.downloadedPics[newProfilePic.icon.magnet]) {
+      //   try {
+      //     console.log('start profile image')
+      //     const imgURI = await this.$gf.media.fetch(newProfilePic.icon.magnet);
+      //     console.log('got profile image')
+      //     const url = URL.createObjectURL(imgURI);
+      //     this.downloadedPics[newProfilePic.icon.magnet] = url;
+      //   } catch (e) {
+      //     console.log(e);
+      //   }
+      // }
+
+      // console.log('watch profilePic, downloaded imgaes in Profile', this.downloadedimages);
+
       if (!this.downloadedimages[newProfilePic.icon.magnet]) {
         try {
+            console.log('getting profile image', newProfilePic.icon.magnet);
             const imgURI = await this.$gf.media.fetch(newProfilePic.icon.magnet);
+            console.log('got profile image', newProfilePic.icon.magnet)
     
             const url = URL.createObjectURL(imgURI);
             this.downloadedPic = url;
 
             this.downloadedimages[newProfilePic.icon.magnet] = url;
+    
+            console.log('downloaded picure in Profile', this.downloadedPic);
             
           } catch (e) {
-            console.log(e);
+            //console.log(e);
           }
         } else {
           this.downloadedPic = this.downloadedimages[newProfilePic.icon.magnet];
         }
 
+      // console.log(this.downloadedPics);
     }
   },
 
@@ -494,6 +591,29 @@ const Profile = {
       newPic.icon.magnet = fileURI;
 
       this.$gf.post(newPic);
+
+      // if (this.profilePic) {
+      //  console.log('editingPic', this.profilePic);
+      //   // If we already have a profile, just change the name
+      //   // (this will sync automatically)
+      //   this.profilePic.icon = {};
+      //   this.profilePic.icon.type = "Image";
+      //   this.profilePic.icon.magnet = fileURI;
+        
+      // } else {
+      //   // Otherwise create a profile
+      //   console.log('bet');
+
+      //   const newPic = {
+      //     type: 'Profile',
+      //     icon: {}
+      //   }
+      //   newPic.icon.type = "Image";
+      //   newPic.icon.magnet = fileURI;
+
+      //   this.$gf.post(newPic);
+      // }
+      // Exit the editing state
 
       this.file = null;
       this.editing = false;
@@ -579,6 +699,7 @@ const Like = {
   },
   computed: {
     likes() {
+      console.log('wepa');
       let likes = this.likesRaw.filter(
         ( like =>
           // Does the message have a type property?
@@ -638,11 +759,15 @@ const Like = {
 
         function smallSize(messageId) {
           const dislikeElem = document.getElementById("dislike-" + messageId);
-          dislikeElem.style.fontSize = '1.8vh';
+          dislikeElem.style.fontSize = '1.2vw';
+          console.log("dislike-" + messageId);
+          console.log(dislikeElem);
         }
 
         const dislikeElem = document.getElementById("dislike-" + messageId);
-        dislikeElem.style.fontSize = '3vh';
+        dislikeElem.style.fontSize = '2vw';
+        console.log("dislike-" + messageId);
+        console.log(dislikeElem);
 
         setTimeout(smallSize, 500, [messageId]);
       }
@@ -675,6 +800,7 @@ const Read = {
 
   created() { // change to mounted instead? -> not guaranteed to be loaded so might want to watch? -> watch to remove is read more than once
     const readers = this.reads.map(read => read.actor);
+    // console.log('readers', readers);
     if (!readers.includes(this.$gf.me)) {
       const read = {
 
@@ -724,6 +850,8 @@ const Read = {
           read.object == this.messageid) 
         // Your filtering here
       )
+
+      // console.log(this.actorstousernames);
 
       const messagesReads = {};
       const newReads = [];
@@ -822,13 +950,32 @@ const Reply = {
     viewReplies() {
       if (!this.viewing) {
         this.viewing = true;
+        // const messageElem = document.getElementById("message-" + this.messageid);
+        // console.log(messageElem);
+        // messageElem.style.height = ' 35vh';
+
         const messageElem = document.getElementById("message-" + this.messageid);
         const height = messageElem.offsetHeight;
+
+        console.log(height);
+
+        // messageElem.style.maxHeight = 'none';
+        // messageElem.style.overflow = 'visible';
+
+        // element.offsetHeight;
+
+        // messageElem.classList.add('open');
+        // messageElem.style.maxHeight = height + 'px';
+        
+
       } else {
         this.viewing = false;
+
         for (const reply of this.replies) {
           this.editing[reply.id] = false;
         }
+        // const messageElem = document.getElementById("message-" + this.messageid);
+        // messageElem.style.height = '5vh';
       }
     },
     sendReply() {
@@ -848,6 +995,7 @@ const Reply = {
     editReply(reply) {
       // Save the text (which will automatically
       // sync with the server)
+      console.log('here');
       reply.content = this.editReplyText;
       // And clear the edit mark
       this.editReplyText = '';
@@ -868,8 +1016,7 @@ const Reply = {
 }
 
 const Group = {
-  props: ["actorstousernames", "classid", "currgroup", "addallowed", "seeingparticipants", 
-  "removeallowed", "delpar", "editablename", "initial"],
+  props: ["actorstousernames", "classid", "currgroup"],
   template: '#group',
 
   setup(props) {
@@ -877,8 +1024,8 @@ const Group = {
     //const classid = Vue.toRef(props, 'classid')
     //const { objects: groupsRaw } = $gf.useObjects([classid])
     const { objects: groupsRaw } = $gf.useObjects(['test'])
-    const { objects: leavesRaw } = $gf.useObjects([$gf.me]);
-    return { groupsRaw, leavesRaw }
+    console.log(groupsRaw);
+    return { groupsRaw }
   },
 
   created() {
@@ -889,17 +1036,16 @@ const Group = {
     // Initialize some more reactive variables
     return {
       name: '',
-      creatingGroup: false,
+      creatingGroup: true,
       currParticipant: null,
       participants: [this.$gf.me],
       displayError: false,
-      addingParticipant: false,
-      editingName: false,
     }
   },
 
   computed: {
     groups() {
+      console.log("IN GROUP: ", this.currgroup);
       let groups = this.groupsRaw.filter(
         ( group =>
           // Does the message have a type property?
@@ -914,39 +1060,6 @@ const Group = {
           ) 
         // Your filtering here
       )
-
-      let leaves = this.leavesRaw.filter(
-        ( leave =>
-          // Does the message have a type property?
-          leave.type         &&
-          // Is the value of that property 'Note'?
-          leave.type == 'Leave' 
-          // &&
-          // // Does the message have a content property?
-          // leave.object      &&
-          // // Is that property a string?
-          // leave.object.id.includes(this.$gf.me.slice(13))
-          ) 
-        // Your filtering here
-      )
-
-      for (const group of groups) {
-        for (const leave of leaves) {
-          
-          if (leave.object.id == group.id) {
-            let indx;
-
-            for (let i = 0; i < group.participants.length; i++) {
-              if (group.participants[i] === leave.actor) {
-                indx = i;
-              }
-            }
-            if (indx) {
-              group.participants.splice(indx, 1);
-            }
-          }
-        }
-      }
       return groups;
     },
   },
@@ -967,110 +1080,15 @@ const Group = {
       }
 
       if (particpantId) {
-        if (!this.participants.includes(particpantId)) {
-          this.participants.push(particpantId);
-        }
+        this.participants.push(particpantId);
+        console.log(particpantId);
       } else {
         this.displayError = true;
       }
+      
     },
     removeParticipant(indx) {
       this.participants.splice(indx,1);
-    },
-    removeExistingParticipant() {
-
-      let currGroupObject;
-
-      for (const group of this.groups) {
-        if (group.id == this.currgroup.id) {
-          currGroupObject = group;
-        }
-      }
-
-      let indx;
-      for (let i = 0; i < this.currgroup.participants.length; i++) {
-        if (this.currgroup.participants[i] === this.delpar) {
-          indx = i;
-        }
-      }
-
-      currGroupObject.participants.splice(indx,1);
-      this.currgroup.participants = currGroupObject.participants;
-    },
-    leaveGroup() {
-      let currGroupObject;
-      for (const group of this.groups) {
-        if (group.id == this.currgroup.id) {
-          currGroupObject = group;
-        }
-      }
-
-      const leaveRequest = {
-        type: 'Leave',
-        summary: this.actorstousernames[this.$gf.me]? this.actorstousernames[this.$gf.me] : this.$gf.me + ' wants to leave group ' + currGroupObject.name,
-        // context: this.classid,
-        context: [currGroupObject.actor],
-        object: currGroupObject,
-      }
-
-      this.$gf.post(leaveRequest);
-      // for (let i = 0; i < currGroupObject.participants.length; i++) {
-      //   if (currGroupObject.participants[i] === this.$gf.me) {
-      //     currGroupObject.participants.splice(i,1);
-      //   }
-      // }
-
-    },
-    async addNewParticipant() {
-      let particpantId;
-      let currGroupObject;
-
-      for (const group of this.groups) {
-        if (group.id == this.currgroup.id) {
-          currGroupObject = group;
-        }
-      }
-      for (const actor of Object.keys(this.actorstousernames)) {
-        if (this.actorstousernames[actor] === this.currParticipant) {
-          particpantId = actor;
-        }
-      }
-      if (!particpantId) {
-        particpantId = await this.resolver.usernameToActor(this.currParticipant);
-        this.actorstousernames[particpantId] = this.currParticipant;
-      }
-      if (particpantId) {
-        if (!currGroupObject.participants.includes(particpantId)) {
-          currGroupObject.participants.push(particpantId);
-        }
-        console.log('NEWBIE', currGroupObject.participants);
-      } else {
-        this.displayError = true;
-      }
-      this.currgroup.participants = currGroupObject.participants;
-      this.addingParticipant = false;
-    },
-    changeGroupName() {
-      let currGroupObject;
-      for (const group of this.groups) {
-        if (group.id == this.currgroup.id) {
-          currGroupObject = group;
-        }
-      }
-      currGroupObject.name = this.name;
-      this.currgroup.name = currGroupObject.name;
-      this.editingName = false;
-    },
-    deleteGroup() {
-      let currGroupObject;
-      for (const group of this.groups) {
-        if (group.id == this.currgroup.id) {
-          currGroupObject = group;
-        }
-      }
-      this.$gf.remove(currGroupObject);
-      this.seeingparticipants.value = false;
-      this.updateGroup('', '', []);
     },
     createGroup() {
       const group = {
@@ -1081,13 +1099,10 @@ const Group = {
         participants: this.participants,
       }
       this.$gf.post(group);
-      this.creatingGroup = false;
-      this.updateGroup(group.id, group.name, group.participants);
+      console.log(group);
     },
-    updateGroup(id, name, participants) {
+    updateGroup(id) {
       this.currgroup.id = id;
-      this.currgroup.name = name;
-      this.currgroup.participants = participants;
     }
   }
 }

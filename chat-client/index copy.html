@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script type="module" src="./chat.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <h1>
+      EduChat
+    </h1>
+
+      <button v-if="!$gf.me" @click="$gf.toggleLogIn">
+        Log In
+      </button>
+
+    <!-- If we're not logged in, hide everything except the login button -->
+    <template v-if="$gf.me">
+
+      <p> <profile :actor="$gf.me" :downloadedimages="downloadedImages"> </profile> <a href="profile.html"><name :actor="$gf.me"></name></p></a>
+
+      <p>
+        Change chat format:
+        <input type="radio" id="channel" :value="false" v-model="privateMessaging" />
+        <label for="channel">Channel-based public chat</label>
+
+        <input type="radio" id="pm" :value="true" v-model="privateMessaging" @change="getPrivateChats"/>
+        <label for="pm">Private Messaging</label>
+      </p>
+
+      <section v-if="!privateMessaging">
+
+        <label for="channel">
+          Change the channel you're chatting in:
+        </label>
+
+        <input type="text" id="channel" v-model="channel"/>
+        <button v-if="channel !== 'default'" id="backDefault" @click="channel='default'"> Back to Default Channel </button>
+        <br> <br>
+        <label for="userChannels">
+          Or choose from your previous channels:
+        </label>
+        <div v-if="showingChannels">
+          <button id="userChannels" @click="showChannels"> Hide Previous Channels</button>
+          <p v-for="context of userChannels">
+            <button @click="channel=context">{{context}}</button>
+          </p>
+        </div> 
+        <div v-else>
+          <button id="userChannels" @click="showChannels"> Show Previous Channels</button>
+        </div>
+
+        <br><br>
+
+        <!-- A form for sending messages -->
+        <form @submit.prevent="sendMessage">
+          <input  type="text" v-model="messageText" placeholder="Type a message..."/>
+          <input type="file" accept="image/png, image/jpeg" @change="onImageAttachment"/>
+          <input type="submit" value="Send"/>
+        </form>
+
+        <article>
+          <!-- List all the messages -->
+          <article v-for="message, i of messages" :key="message.id">
+
+            <div :id="`message-${message.id}`" class="myMessage-public" v-if="message.actor == $gf.me">
+
+                          <!-- Display and edit form if we're editing a message -->
+              <form v-if="editID==message.id" @submit.prevent="saveEditMessage(message)">
+                <input type="text" v-model="editText">
+                <input type="submit" value="Save"/>
+              </form>
+
+              <!-- Otherwise, display a bunch of properties from the message -->
+              <div v-else>
+                  <span class="authorInfo">
+                    <profile :actor="message.actor" :downloadedimages="downloadedImages"></profile> 
+                    <b v-if="message.actor == $gf.me"> <b>Me</b> @{{ actorsToUsernames[message.actor] }}</b>
+                    <b v-else><b><name :actor="message.actor"></name></b> @{{ actorsToUsernames[message.actor] }}</b>
+                  </span>
+                  <p>{{ message.content }} </p>
+
+
+                  <p v-if="message.published == message.updated"> Posted {{timeSincePosted(message.published)}} ago </p>
+                  <p v-else> Last edited {{timeSincePosted(message.updated)}} ago </p>
+
+                  <!-- <div v-if="myLikes.includes()"></div> -->
+                  <like :messageid="message.id" :actorid="$gf.me"></like>
+                  <reply :messageid="message.id" :actorid="$gf.me" :actorstousernames="actorsToUsernames"></reply>
+                  <read :messageid="message.id" :actorid="$gf.me" :actorstousernames="actorsToUsernames"></read>
+
+                  <div v-if="message.attachment">
+
+                    <div v-if="message.attachment.magnet">
+                      <img class="msgImg" :src="downloadedImages[message.attachment.magnet]"/>
+                    </div>
+
+                    <div v-else>
+                      Waiting for image
+                    </div>
+                    
+                  </div>
+
+                  <button @click="removeMessage(message)">
+                    Delete Message
+                  </button>
+                  <button @click="startEditMessage(message)">
+                    Edit Message
+                  </button>
+
+              </div>
+            </div>
+
+            <div :id="`message-${message.id}`" class="message" v-else>
+              <!-- Otherwise, display a bunch of properties from the message -->
+                  <span class="authorInfo">
+                    <profile :actor="message.actor" :downloadedimages="downloadedImages"></profile> 
+                    <b v-if="message.actor == $gf.me"> <b>Me</b> @{{ actorsToUsernames[message.actor] }}</b>
+                    <b v-else><b><name :actor="message.actor"></name></b> @{{ actorsToUsernames[message.actor] }}</b>
+                  </span>
+                  <p>{{ message.content }} </p>
+
+
+                  <p v-if="message.published == message.updated"> Posted {{timeSincePosted(message.published)}} ago </p>
+                  <p v-else> Last edited {{timeSincePosted(message.updated)}} ago </p>
+
+                  <!-- <div v-if="myLikes.includes()"></div> -->
+                  <like :messageid="message.id" :actorid="$gf.me"></like>
+                  <reply :messageid="message.id" :actorid="$gf.me" :actorstousernames="actorsToUsernames"></reply>
+                  <read :messageid="message.id" :actorid="$gf.me" :actorstousernames="actorsToUsernames"></read>
+
+                  <div v-if="message.attachment">
+                    <div v-if="message.attachment.magnet">
+                      <img class="msgImg" :src="downloadedImages[message.attachment.magnet]"/>
+                    </div>
+                    <div v-else>
+                      Waiting for image
+                    </div>
+                  </div>
+
+              </div>
+
+          </article>
+        </article>
+
+      </section>
+
+      <section v-else id="privMessaging">
+
+        <article id="prevPrivChats">
+
+          Previous Chats:
+
+          <article class="privChat" v-for="id of privUsers" @click="openChat(id[1])">
+            <name :actor="id[0]"></name>
+          </article>
+
+        </article>
+
+        <div>
+
+          <button @click="startNewChat">New Chat</button>
+
+          <div v-if="newChat">
+            <label for="recipient">
+              Message to:
+            </label>
+            <input type="text" id="recipient" v-model="usernameRecipient" @input="updateRecipient"/>
+            <div style="background-color:red; width:fit-content; color:white" v-if="notifyBad">
+              Username not valid.
+            </div>
+  
+            <!-- <name :actor="recipient"></name> -->
+  
+            <br><br>
+  
+          <form @submit.prevent="sendMessage">
+            <input  type="text" v-model="messageText" placeholder="Type a message..."/>
+            <input type="file" accept="image/png, image/jpeg" @change="onImageAttachment"/>
+            <input type="submit" value="Send"/>
+          </form>
+  
+          </div>
+
+          <!-- List all the messages -->
+          <div id="privChatMessages">
+            <!-- List all the messages -->
+
+            <a href="newChat.html"> Create Group </a>
+            <article v-for="message, i of messages" :key="message.id">
+  
+              <div :id="`myMessage-${message.id}`" class="myMessage" v-if="message.actor == $gf.me">
+  
+                            <!-- Display and edit form if we're editing a message -->
+                <form v-if="editID==message.id" @submit.prevent="saveEditMessage(message)">
+                  <input type="text" v-model="editText">
+                  <input type="submit" value="Save"/>
+                </form>
+  
+                <!-- Otherwise, display a bunch of properties from the message -->
+                <div v-else>
+                    <span class="authorInfo">
+                      <profile :actor="message.actor" :downloadedimages="downloadedImages"></profile> 
+                      <b v-if="message.actor == $gf.me"> <b>Me</b> @{{ actorsToUsernames[message.actor] }}</b>
+                      <b v-else><b><name :actor="message.actor"></name></b> @{{ actorsToUsernames[message.actor] }}</b>
+                    </span>
+                    <p>{{ message.content }} </p>
+  
+  
+                    <p v-if="message.published == message.updated"> Posted {{timeSincePosted(message.published)}} ago </p>
+                    <p v-else> Last edited {{timeSincePosted(message.updated)}} ago </p>
+  
+                    <!-- <div v-if="myLikes.includes()"></div> -->
+                    <like :messageid="message.id" :actorid="$gf.me"></like>
+                    <reply :messageid="message.id" :actorid="$gf.me" :actorstousernames="actorsToUsernames"></reply>
+                    <read :messageid="message.id" :actorid="$gf.me" :actorstousernames="actorsToUsernames"></read>
+  
+                    <div v-if="message.attachment">
+  
+                      <div v-if="message.attachment.magnet">
+                        <img class="msgImg" :src="downloadedImages[message.attachment.magnet]"/>
+                      </div>
+  
+                      <div v-else>
+                        Waiting for image
+                      </div>
+                      
+                    </div>
+  
+                    <button @click="removeMessage(message)">
+                      Delete Message
+                    </button>
+                    <button @click="startEditMessage(message)">
+                      Edit Message
+                    </button>
+  
+                </div>
+              </div>
+  
+              <div :id="`message-${message.id}`" class="message" v-else>
+                <!-- Otherwise, display a bunch of properties from the message -->
+                    <span class="authorInfo">
+                      <profile :actor="message.actor" :downloadedimages="downloadedImages"></profile> 
+                      <b v-if="message.actor == $gf.me"> <b>Me</b> @{{ actorsToUsernames[message.actor] }}</b>
+                      <b v-else><b><name :actor="message.actor"></name></b> @{{ actorsToUsernames[message.actor] }}</b>
+                    </span>
+                    <p>{{ message.content }} </p>
+  
+  
+                    <p v-if="message.published == message.updated"> Posted {{timeSincePosted(message.published)}} ago </p>
+                    <p v-else> Last edited {{timeSincePosted(message.updated)}} ago </p>
+  
+                    <!-- <div v-if="myLikes.includes()"></div> -->
+                    <like :messageid="message.id" :actorid="$gf.me"></like>
+                    <reply :messageid="message.id" :actorid="$gf.me" :actorstousernames="actorsToUsernames"></reply>
+                    <read :messageid="message.id" :actorid="$gf.me" :actorstousernames="actorsToUsernames"></read>
+  
+                    <div v-if="message.attachment">
+                      <div v-if="message.attachment.magnet">
+                        <img class="msgImg" :src="downloadedImages[message.attachment.magnet]"/>
+                      </div>
+                      <div v-else>
+                        Waiting for image
+                      </div>
+                    </div>
+  
+                </div>
+  
+            </article>
+          </div>
+        </div>
+
+      </section>
+
+    </template>
+  </div>
+
+  <template id="name">
+    <span v-if="!editing">
+
+      <!-- If we're not editing the name-->
+      <!-- Display the profile's name, if it exists -->
+      <!-- or anonymous if it doesn't -->
+      {{ profile? profile.name : 'Anonymous' }}
+
+      <!-- Also if the name is "editable" add an edit button -->
+      <button v-if="editable" @click="editName">
+        Edit Name
+      </button>
+    </span>
+
+    <!-- If we're in the editing state, create something to edit the name-->
+    <form v-else @submit.prevent="saveName">
+      <input type="text" v-model="editText"/>
+      <input type="submit" value="Save Name"/>
+    </form>
+  </template>
+
+
+  <template id="profile">
+    <span v-if="!editing">
+      <!-- If we're not editing the name-->
+      <!-- Display the profile's name, if it exists -->
+      <!-- or anonymous if it doesn't -->
+
+      <div v-if="profilePic">
+        <img class="authorPic" :src="downloadedPic"/>
+      </div>
+
+      <div v-else>
+        <img class="authorPic" src="missingPic.webp"/>
+      </div>
+
+      <!-- {{ profilePic? '' : 'Anonymous' }} -->
+
+      <!-- Also if the name is "editable" add an edit button -->
+      <button v-if="editable" @click="editProfilePic">
+        Edit Profile Pic
+      </button>
+    </span>
+
+    <!-- If we're in the editing state, create something to edit the name-->
+    <!-- <form v-else @submit.prevent="saveProfilePic"> -->
+      <!-- <form v-else @submit.prevent="saveProfilePic"> -->
+      <div v-else >
+        <input type="file" accept="image/png, image/jpeg" @change="onImageAttachment"/>
+        <button @click="saveProfilePic"> Change Profile Pic </button>
+      </div>
+      <!-- </form> -->
+    <!-- </form> -->
+  </template>
+
+  <template id="like">
+    <button :id="`dislike-${messageid}`" class="dislikeBtn" v-if="myLikes.length > 0" @click="removeLike"> ❤️ </button>
+    <button :id="`like-${messageid}`" class="likeBtn" v-else @click="sendLike"> 🤍 </button>
+    {{ likes.length }}
+  </template>
+
+  <template id="read">
+    <div>
+      Seen by 
+      <span v-for="read of reads">
+        {{ username(read.actor)}},
+      </span>
+      <div class="loader" :id="`loader-${messageid}`"></div>
+  </div>
+</template>
+
+<template id="reply">
+  <button v-if="!replying" @click="replying = true">Reply</button>
+  <div v-else>
+    <input type="text" v-model="replyText" placeholder="Type a reply..."/>
+    <button @click="sendReply">Send</button>
+  </div>
+
+  <div v-if="replies.length > 0">
+    <button v-if="!viewing" @click="viewReplies">View Replies</button>
+    <div v-else>
+      <button @click="viewReplies">Hide Replies</button>
+      <article v-for="reply of replies">
+
+        <span v-if="!editing[reply.id]"> <b>{{username(reply.actor)}}:</b> {{reply.content}}</span>
+
+        <span v-else> <b>{{username(reply.actor)}}:</b>        
+          <form v-if="reply.actor==$gf.me" @submit.prevent="editReply(reply)">
+          <input type="text" v-model="editReplyText">
+          <input type="submit" value="Save"/>
+        </form></span>
+
+        <button v-if="reply.actor==$gf.me" @click="edit(reply)">Edit</button>
+        <button v-if="reply.actor==$gf.me" @click="removeReply(reply)">Delete</button>
+
+
+      </article>
+    </div>
+  </div>
+
+
+</template>
+
+</body>
+</html>
