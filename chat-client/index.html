@@ -61,7 +61,7 @@
           </article>
         </section>
 
-        <section id="mainSection" v-else style="display: none;">
+        <section id="mainSection" v-else>
           
           <article id="chatMessages" @scroll="scrollMessages">
             <!-- List all the messages -->
@@ -173,6 +173,9 @@
         <article v-if="addingParticipant">
             <input v-model="currParticipant" @input="displayError = false" type="text" id="participant" placeholder="Enter participant username"> </input>
             <button id="addBtn" @click="addNewParticipant"> Add</button>
+            <article v-if="displayError">
+              Invalid username.
+            </article>
         </article>
 
         <button style="background-color: red" @click="deleteGroup"> Delete Group </button>

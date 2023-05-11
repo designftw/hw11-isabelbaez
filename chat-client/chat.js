@@ -31,6 +31,14 @@ const app = {
     return { channel, messagesRaw }
   },
 
+  mounted() {
+
+    setTimeout(function () {
+      const mainSec = document.getElementById("mainSection");
+      mainSec.style.display = "none";
+    }, 100)
+  },
+
   data() {
     // Initialize some more reactive variables
     return {
@@ -63,24 +71,31 @@ const app = {
   watch: {
     'currGroup.id': function() {
 
-        if (this.channel == 'default') {
-          this.channel = this.currGroup.id;
+      // if (this.currGroup.id == '') {
+      //   const mainSec = document.getElementById("mainSection");
+      //   mainSec.style.display = "none";
+      // }
+
+      if (this.channel == 'default') {
+        const mainSec = document.getElementById("mainSection");
+        mainSec.style.display = "none";
+        this.channel = this.currGroup.id;
+        const groupp = document.getElementsByClassName("groupStuff");
+        groupp[0].style.width = "29%"
+        
+        console.log(groupp[0].style.width);
+
+
+        setTimeout(function () {
           const groupp = document.getElementsByClassName("groupStuff");
-          groupp[0].style.width = "29%"
-          
-          console.log(groupp[0].style.width);
-
-
-          setTimeout(function () {
-            const groupp = document.getElementsByClassName("groupStuff");
-            groupp[0].style.transition = "none"
-            groupp[0].style.width = "100%"
-            const mainSec = document.getElementById("mainSection");
-            mainSec.style.display = "block";
-          }, 2000)
-        } else {
-          this.channel = this.currGroup.id;
-        }
+          groupp[0].style.transition = "none"
+          groupp[0].style.width = "100%"
+          const mainSec = document.getElementById("mainSection");
+          mainSec.style.display = "block";
+        }, 2000)
+      } else {
+        this.channel = this.currGroup.id;
+      }
 
     },
     async messages(newMessages) {
@@ -1042,13 +1057,12 @@ const Group = {
       if (particpantId) {
         if (!currGroupObject.participants.includes(particpantId)) {
           currGroupObject.participants.push(particpantId);
+          this.addingParticipant = false;
         }
-        console.log('NEWBIE', currGroupObject.participants);
       } else {
         this.displayError = true;
       }
       this.currgroup.participants = currGroupObject.participants;
-      this.addingParticipant = false;
     },
     changeGroupName() {
       let currGroupObject;
@@ -1070,7 +1084,13 @@ const Group = {
       }
       this.$gf.remove(currGroupObject);
       this.seeingparticipants.value = false;
-      this.updateGroup('', '', []);
+
+      if (this.groups[0]) {
+        this.updateGroup(this.groups[0].id, this.groups[0].name, this.groups[0].participants);
+      } else {
+        this.updateGroup('', '', []);
+      }
+      
     },
     createGroup() {
       const group = {
