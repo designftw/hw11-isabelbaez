@@ -32,11 +32,10 @@ const app = {
   },
 
   mounted() {
-
     setTimeout(function () {
       const mainSec = document.getElementById("mainSection");
       mainSec.style.display = "none";
-    }, 100)
+    }, 200)
   },
 
   data() {
@@ -70,11 +69,7 @@ const app = {
   
   watch: {
     'currGroup.id': function() {
-
-      // if (this.currGroup.id == '') {
-      //   const mainSec = document.getElementById("mainSection");
-      //   mainSec.style.display = "none";
-      // }
+      console.log('LA CRICAAA', this.currGroup.name);
 
       if (this.channel == 'default') {
         const mainSec = document.getElementById("mainSection");
@@ -96,6 +91,8 @@ const app = {
       } else {
         this.channel = this.currGroup.id;
       }
+
+      console.log(this.channel);
 
     },
     async messages(newMessages) {
@@ -127,6 +124,9 @@ const app = {
 
   computed: {
     messages() {
+      if (this.reCompute) {
+
+      }
       let messages = this.messagesRaw
         // Filter the "raw" messages for data
         // that is appropriate for our application
@@ -149,6 +149,7 @@ const app = {
         .slice(0,10)
 
         .sort((m1, m2)=> new Date(m1.published) - new Date(m2.published))
+      console.log('getting', messages);
       return messages
     },
   },
@@ -905,7 +906,7 @@ const Group = {
     return {
       name: '',
       creatingGroup: false,
-      currParticipant: null,
+      currParticipant: '',
       participants: [this.$gf.me],
       displayError: false,
       addingParticipant: false,
@@ -968,26 +969,32 @@ const Group = {
   methods: {
     async addParticipant() {
 
-      let particpantId;
+      if (this.currParticipant !== '') {
+        let particpantId;
 
-      for (const actor of Object.keys(this.actorstousernames)) {
-        if (this.actorstousernames[actor] === this.currParticipant) {
-          particpantId = actor;
+        for (const actor of Object.keys(this.actorstousernames)) {
+          if (this.actorstousernames[actor] === this.currParticipant) {
+            particpantId = actor;
+          }
         }
-      }
-
-      if (!particpantId) {
-        particpantId = await this.resolver.usernameToActor(this.currParticipant);
-        this.actorstousernames[particpantId] = this.currParticipant;
-      }
-
-      if (particpantId) {
-        if (!this.participants.includes(particpantId)) {
-          this.participants.push(particpantId);
+  
+        if (!particpantId) {
+          particpantId = await this.resolver.usernameToActor(this.currParticipant);
+          this.actorstousernames[particpantId] = this.currParticipant;
         }
+  
+        if (particpantId) {
+          if (!this.participants.includes(particpantId)) {
+            this.participants.push(particpantId);
+          }
+        } else {
+          this.displayError = true;
+        }
+
       } else {
         this.displayError = true;
       }
+
     },
     removeParticipant(indx) {
       this.participants.splice(indx,1);
@@ -1037,32 +1044,37 @@ const Group = {
 
     },
     async addNewParticipant() {
-      let particpantId;
-      let currGroupObject;
 
-      for (const group of this.groups) {
-        if (group.id == this.currgroup.id) {
-          currGroupObject = group;
+      if (this.currParticipant !== '') {
+        let particpantId;
+        let currGroupObject;
+
+        for (const group of this.groups) {
+          if (group.id == this.currgroup.id) {
+            currGroupObject = group;
+          }
         }
-      }
-      for (const actor of Object.keys(this.actorstousernames)) {
-        if (this.actorstousernames[actor] === this.currParticipant) {
-          particpantId = actor;
+        for (const actor of Object.keys(this.actorstousernames)) {
+          if (this.actorstousernames[actor] === this.currParticipant) {
+            particpantId = actor;
+          }
         }
-      }
-      if (!particpantId) {
-        particpantId = await this.resolver.usernameToActor(this.currParticipant);
-        this.actorstousernames[particpantId] = this.currParticipant;
-      }
-      if (particpantId) {
-        if (!currGroupObject.participants.includes(particpantId)) {
-          currGroupObject.participants.push(particpantId);
-          this.addingParticipant = false;
+        if (!particpantId) {
+          particpantId = await this.resolver.usernameToActor(this.currParticipant);
+          this.actorstousernames[particpantId] = this.currParticipant;
         }
+        if (particpantId) {
+          if (!currGroupObject.participants.includes(particpantId)) {
+            currGroupObject.participants.push(particpantId);
+            this.addingParticipant = false;
+          }
+        } else {
+          this.displayError = true;
+        }
+        this.currgroup.participants = currGroupObject.participants;
       } else {
         this.displayError = true;
       }
-      this.currgroup.participants = currGroupObject.participants;
     },
     changeGroupName() {
       let currGroupObject;
@@ -1085,11 +1097,7 @@ const Group = {
       this.$gf.remove(currGroupObject);
       this.seeingparticipants.value = false;
 
-      if (this.groups[0]) {
-        this.updateGroup(this.groups[0].id, this.groups[0].name, this.groups[0].participants);
-      } else {
-        this.updateGroup('', '', []);
-      }
+      window.location.reload();
       
     },
     createGroup() {

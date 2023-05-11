@@ -144,6 +144,17 @@ body,html {
   margin-left: 2%;
 }
 
+.inputBtn {
+  font-size: 1.8vh;
+}
+
+#logInBtn {
+  font-size: 1.8vh;
+  height: fit-content;
+  margin-top: 3vh;
+  margin-right: 10vh;
+}
+
 #participantsBtn {
   font-size: 1.8vh;
   margin-right: 5%;

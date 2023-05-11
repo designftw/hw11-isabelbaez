@@ -67,7 +67,7 @@
 
     <!-- If we're in the editing state, create something to edit the name-->
     <form v-else @submit.prevent="saveName">
-      <input v-model="editText"/>
+      <input class="inputBtn" v-model="editText"/>
       <input class="profileBtn" type="submit" value="Save Name"/>
     </form>
   </template>
