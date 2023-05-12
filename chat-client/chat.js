@@ -1036,6 +1036,7 @@ const Group = {
       }
 
       this.$gf.post(leaveRequest);
+      window.location.reload();
       // for (let i = 0; i < currGroupObject.participants.length; i++) {
       //   if (currGroupObject.participants[i] === this.$gf.me) {
       //     currGroupObject.participants.splice(i,1);
