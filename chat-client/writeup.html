@@ -27,8 +27,25 @@
 
 			<p> Through EduChat, users can join classes as they do on Piazza, these classes are created by a registrar entity 
 				and are fixed based on the institution. Users can then join/leave classes. Within each class, users can create 
-				groupchats amongst the class members. This was an important part of the second half of my implementation: limiting
-				groupchat participants  </p>
+				groupchats. These groupchates are similar to regular messaging applications, making them more
+				accessible than other platforms, such as Slack. This groupchats are limited to class members, which was an important 
+				part of the second half of my implementation: limiting groupchat participants to members of the given class, and 
+				notifying the user of this, whether it be in chat creation or chat modification. </p>
+
+			<p> Some things differed from my wireframes. I had not accounted for certain logistics, such as what it means when a user 
+				leaves a class (in the current implementation, all group chats they created are deleted and they are taken off from the 
+				participants of all the others they belonged to). This prevents our specificaton from being violated: users cannot be part of
+				a groupchat in a class they are not a part of. </p>
+			
+			<p> Such complexities also led to some simplifications in my design. I took away the toggling between joining a class as a student
+				or instructor. Originally, instructors would be able to be admins in the main class groupchat. However, since this would require them
+				to create the groupchat, they would need to join the class before any student. Together with the structure of Graffiti, this hierarchy 
+				did not seem to fit. Similarly, in my wireframes I had not thought about class leaving, which is a functionality I had to implement.
+			</p>
+				
+			<p> As next steps in the future, I would like to implement the link/file pinning feature I previously stated as tentitive. In this
+				iteration, I chose to prioritize the class-group chat hierarchy and its multiple intricacies.
+			</p>
 
 		</article>
 	</section>
