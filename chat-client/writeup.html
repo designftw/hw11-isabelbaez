@@ -4,7 +4,7 @@
 
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Homepage Writeup</title>
+	<title>Final Chat App Writeup</title>
 	<link rel="stylesheet" href="./writeup.css">
 
 </head>
@@ -16,15 +16,20 @@
 	<main>
 	<section>
 		<article>
-			<p>As I note, I did most of my development for this assignment in the format of a mobile-style screen, as that is what I predict to be the most common use case for my app. This format is also what I tested in my paper and figma prototypes. Due to this, although my design is universal, I suggest a mobile format (through Inspect) for a better user experience.</p>
+			<p>Once again, I did most of my development for this assignment in the format of a mobile-style screen, as that 
+				is what I predict to be the most common use case for my app. This format is also what I tested in my paper 
+				and figma prototypes. Due to this, although my design is universal, I suggest a mobile format (through Inspect) 
+				for a better user experience.</p>
 
-			<p>The final design I plan to hand in for this assignment is similar to my figma mock-up, with the tentative file/link pinning feature. My design can be subdivided into 2/3 main points of development: group chats, classes, and the file/link pinning feature.</p>
-			
-			<p>For this assignment, as discussed with instructors in studio, I concluded that a good halfway point would be implementing the entire group chats functionality. This went beyond my wireframes, as I had to deal with group chat editing, participant toggling, etc. Based on the format of Graffiti there have been a few changes. Now, group chats have an admin (the creator of the chat), and members can only be added/removed by them. If a member wishes to leave the group, they must submit a request, which the admin automatically approves once they are online. Moreover, only an admin can edit the group chat’s name. I believe this portion of my design takes up half, if not more, of the coding/work that I will have to do.</p> 
-			
-			<p>The classes I hope to implement in my final iteration simply consist of creating static Graffiti types representing classes (which participants can join or leave without requesting - I plan to do this by using Join types attached to a class id). Once these have been implemented, it is simply a matter of assigning their ids to their respective groupchats’ contexts, and limiting group chat participants to those who have joined the respective class.</p> 
-			
-			<p>I leave the file/link pinning feature as a tentative add-on. Although I think it is very useful, I recognize that the main parts of my app consist on the class-group chat hierarchy, and I want to prioritize the usability of these before adding my third element.</p>  
+			<p>The main problem that my chat app seeks to target is the organization of academic groupchats. Platforms, such 
+				as Piazza, provide a good centralized space for classroom interaction. However, they lack the casualness and 
+				conventionality of regular messaging apps, such as Messeger.</p>
+
+			<p> Through EduChat, users can join classes as they do on Piazza, these classes are created by a registrar entity 
+				and are fixed based on the institution. Users can then join/leave classes. Within each class, users can create 
+				groupchats amongst the class members. This was an important part of the second half of my implementation: limiting
+				groupchat participants  </p>
+
 		</article>
 	</section>
 	</main>

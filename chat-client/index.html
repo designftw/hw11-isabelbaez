@@ -246,9 +246,20 @@
         <article v-if="addingParticipant">
             <input v-model="currParticipant" @input="displayError = false" type="text" id="participant" placeholder="Enter participant username"> </input>
             <button id="addBtn" @click="addNewParticipant"> Add</button>
-            <article v-if="displayError">
-              Invalid username.
+
+            <article v-if="currParticipant !== ''" class="dropDown"> 
+              <article v-if="participantSearch.length === 0"> No participants in {{currclass.name}} matching that description found. </article>
+              <article v-else v-for="foundParticipant of participantSearch" class="foundClass" @click="addFromDropdown(foundParticipant)">{{foundParticipant}}</article>
             </article>
+  
+  
+            <article style="color:red" v-if="displayError">
+              User {{currParticipant}} does not exist in {{currclass.name}}.
+            </article>
+
+            <!-- <article v-if="displayError">
+              Invalid username.
+            </article> -->
         </article>
 
         <button style="background-color: red" @click="deleteGroup"> Delete Group </button>
