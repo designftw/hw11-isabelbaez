@@ -40,7 +40,7 @@
       </template>
   
       <p>
-        <button class="profileBtn" @click="$gf.toggleLogIn">
+        <button id="login" class="profileBtn" @click="$gf.toggleLogIn">
           <!-- If we have a user ID, we're logged in so show "Log Out" -->
           <!-- Otherwise, show "Log In" -->
           {{ $gf.me? 'Log Out' : 'Log In' }}
@@ -100,7 +100,7 @@
       <!-- <form v-else @submit.prevent="saveProfilePic"> -->
       <div v-else >
         <input type="file" accept="image/png, image/jpeg" @change="onImageAttachment"/>
-        <button class="profileBtn" @click="saveProfilePic"> Change Profile Pic </button>
+        <button class="save" @click="saveProfilePic"> Save Profile Pic </button>
       </div>
       <!-- </form> -->
     <!-- </form> -->

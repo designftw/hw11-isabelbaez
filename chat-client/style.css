@@ -71,6 +71,77 @@ body,html {
   transition: width 1s;
 }
 
+.classStuff {
+  display: block;
+  width: 60%;
+  margin-left: 20%;
+}
+
+
+.classArt {
+  width: 100%;
+  display: flex;
+  justify-content: space-evenly;
+}
+
+.dropDown {
+  background-color: white;
+  height: fit-content;
+  transition: height 1s;
+  margin-left: 34%;
+  font-size: 1.3vh;
+  box-shadow: 0px 5px 5px 0px rgb(162, 162, 162);
+  padding: 2%;
+}
+
+.dropDown > article {
+  border-bottom: rgb(157, 157, 157);
+  padding: 0.5%;
+}
+
+.classArt > button {
+  font-size: 1.8vh;
+  height: fit-content;
+  margin-top: 10%;
+}
+
+.class {
+  background-color: rgb(233, 233, 233);;
+  font-size: 1.8vh;
+  height: 7vh;
+  width: 65%;
+  margin-bottom: 10%;
+  /* background-color: rgb(206, 206, 206); */
+  padding: 5%;
+  border-radius: 20px;
+}
+
+.newClassBtn {
+  font-size: 1.8vh;
+  background-color: rgb(0, 102, 255);
+  margin-top: 20%;
+  margin-left: 30%;
+  padding: 3%;
+}
+
+#classes > h1 {
+  font-size: 3vh;
+  margin-top: 20%;
+  margin-left: 40%;
+}
+
+.classList {
+  margin-top: 20%;
+  overflow: auto;
+  height: 40vh;
+}
+
+.class:hover{
+  background-color: rgb(157, 157, 157);
+  color: white;
+}
+
+
 .groupChats {
   background-color: rgb(233, 233, 233);
   display: block;
@@ -120,13 +191,14 @@ body,html {
 }
 
 #groupInfo {
-  height: 6.5vh;
+  height: fi;
 }
 
 #noParticipants {
   font-size: 2.3vh;
   display: flex;
-  justify-content: space-between;
+  justify-content: space-evenly;
+  height: 20%;
 }
 
 #yesParticipants {
@@ -135,7 +207,22 @@ body,html {
 }
 
 #noParticipants > p {
-  margin-left: 32%;
+  width: 100%;
+}
+
+
+#noParticipants > div {
+  display: flex;
+  justify-content: space-between;
+  margin-left: 10%;
+  margin-right: 20%;
+  width: 100%;
+}
+
+#noParticipants > div > button {
+  font-size: 1.8vh;
+  height: fit-content;
+  margin-top: 2vh;
 }
 
 #addAllowedArt > button, #addAllowedArt > article > button  {
@@ -146,6 +233,21 @@ body,html {
 
 .inputBtn {
   font-size: 1.8vh;
+}
+
+#menu {
+  margin-top: 1vh;;
+  position: relative;
+  float: right;
+  width: 8vh;
+  display: flex;
+  justify-content: space-between;
+  margin-right: 1vh;
+}
+
+#menu > img:hover{
+  background-color: rgb(157, 157, 157);
+  /* margin-right: 1vh; */
 }
 
 #logInBtn {
@@ -162,11 +264,14 @@ body,html {
   height: fit-content;
 }
 
-#backBtn {
+
+.backClassBtn {
   font-size: 1.8vh;
-  margin-top: 5%;
-  margin-left: 5%;
-  margin-right: 5%;
+  height: fit-content;
+}
+
+.backBtn {
+  font-size: 1.8vh;
   height: fit-content;
 }
 
@@ -187,6 +292,15 @@ body,html {
 #profilePage {
   font-size: 1.8vh;
   padding: 5%;
+}
+
+.save {
+  font-size: 1.8vh;
+  background-color: rgb(0, 102, 255);
+}
+
+#login {
+  background-color: red;
 }
 
 
@@ -271,6 +385,13 @@ body,html {
 #newMessageForm > form {
   font-size: 1.8vh;
 }
+.leaveClassBtn {
+  margin-top: 10%;
+}
+
+.leaveClassBtn:hover {
+  background-color: rgb(157, 157, 157);
+}
 
 .newChatBtn {
   font-size: 1.8vh;
@@ -280,7 +401,7 @@ body,html {
   padding: 3%;
 }
 
-#groupCreation {
+#groupCreation, #classAdding {
   background-color: white;
   position: absolute;
   top: 0px; left: 0px;
@@ -292,6 +413,20 @@ body,html {
   padding: 5%;
   border-radius: 20px;
   font-size: 2vh;
+}
+
+#classAdding > div > p {
+  font-size: 3vh;
+}
+
+#classAdding > input {
+  font-size: 1.8vh;
+}
+
+#classAdding > button {
+  font-size: 1.8vh;
+  margin-left: 2%;
+  background-color: rgb(0, 102, 255);
 }
 
 #groupCreation > input, #groupCreation > button {
@@ -311,7 +446,7 @@ body,html {
   font-size: 3vh;
 }
 
-#groupCreation > div > button {
+#groupCreation > div > button, #classAdding > div > button{
   height: fit-content;
   padding: 1%;
 }
@@ -337,7 +472,7 @@ body,html {
   background-color: rgb(0, 102, 255);
 }
 
-#groupCreationBackdrop {
+#groupCreationBackdrop, #classAddingBackdrop {
   background-color: rgba(0, 0, 0, 0.383);
   position: absolute;
   top: 0px; left: 0px;
@@ -435,6 +570,11 @@ body,html {
   font-size: 1.5vh;
 }
 
+.actions {
+  display: flex;
+  justify-content: space-between;
+}
+
 
 .myMessage-public > form > input {
   font-size: 1.5vh;
@@ -447,6 +587,16 @@ body,html {
 .replyClass {
   margin-top: 5%;
   margin-bottom: 5%;
+}
+
+#messageHeader {
+  display: flex;
+  justify-content: space-between;
+  /* width: 270%; */
+}
+
+#messageHeader > img:hover {
+  background-color: rgb(1, 65, 162);
 }
 
 .messageContent{
@@ -504,17 +654,17 @@ body,html {
   }
 
   .likeBtn {
-    background-color: rgb(203, 203, 203);
-    border: none;
-    font-size: 1.2vw;
-    transition: font-size 1s;
+    aspect-ratio: 1/1;
+    width: 40px;
+    transition: width 1s;
+    padding-bottom: 1%;
   }
 
   .dislikeBtn {
-    background-color: rgb(203, 203, 203);
-    border: none;
-    font-size: 1.2vw;
-    transition: font-size 1s;
+    aspect-ratio: 1/1;
+    width: 40px;
+    transition: width 1s;
+    padding-bottom: 1%;
   }
 
   .myMessage > #like > .dislikeBtn {

@@ -21,146 +21,219 @@
     </nav>
 
     <!-- If we're not logged in, hide everything except the login button -->
-    <template v-if="$gf.me">
 
-      <article id="groupInfo">
-        <div id="yesParticipants" v-if="seeingParticipants.value ">
-          <button id="backBtn" @click="seeingParticipants.value = false"> Back</button>
+    <template v-if="$gf.me && $gf.me === creatorId">
+      <class :currclass="currClass" :actorstousernames="actorsToUsernames" :creator="true"></group>
+    </template>
 
-          <p><b>{{currGroup.name}}</b></p>
+    <template v-if="$gf.me && $gf.me !== creatorId">
 
+      <div id="secClasses">
+        <div id="classes">
+          <h1> Classes </h1>
+          <class :currclass="currClass" :actorstousernames="actorsToUsernames" :getclass="getClass"></class>
         </div>
-
-        <div id="noParticipants"  v-else>
-          <p v-if="currGroup.id !== ''">{{currGroup.name}}</p>
-          <p v-else>Group Chats</p>
-          <button v-if="currGroup.name" id="participantsBtn" @click="seeingParticipants.value = true">Settings</button>
-        </div>
-
-      </article>
-
-      <div id="main">
-
-        <div v-if="!seeingParticipants.value ">
-          <group :currgroup="currGroup" :actorstousernames="actorsToUsernames"></group>
-        </div>
-
-        <section v-if="seeingParticipants.value">
-          <group v-if="currGroup.id.includes($gf.me.slice(13))" :currgroup="currGroup" :actorstousernames="actorsToUsernames" :editablename="true"></group>
-          <p> Members: </p>
-          <article id="participants">
-            <article v-for="participant of currGroup.participants">
-              <profile :actor="participant" :downloadedimages="downloadedImages"></profile> 
-              <name :actor="participant"></name></b> @{{ actorsToUsernames[participant] }}
-              <b v-if="currGroup.id.includes(participant.slice(13))"> (Admin)</b>
-              <group v-if="currGroup.id.includes($gf.me.slice(13)) && participant !== $gf.me" :currgroup="currGroup" 
-              :actorstousernames="actorsToUsernames" :removeallowed="true" :delpar="participant"></group>
-            </article>
-            <group :currgroup="currGroup" :actorstousernames="actorsToUsernames" :addallowed="true" 
-            :seeingparticipants="seeingParticipants"></group>
-          </article>
-        </section>
-
-        <section id="mainSection" v-else>
-          
-          <article id="chatMessages" @scroll="scrollMessages">
-            <!-- List all the messages -->
-            <article v-for="message, i of messages" :key="message.id">
-
-              <div :id="`message-${message.id}`" class="myMessage-public" v-if="message.actor == $gf.me">
-
-                            <!-- Display and edit form if we're editing a message -->
-                <form v-if="editID==message.id" @submit.prevent="saveEditMessage(message)">
-                  <input type="text" v-model="editText">
-                  <input type="submit" value="Save"/>
-                </form>
-
-                <!-- Otherwise, display a bunch of properties from the message -->
-                <div v-else>
-                    <span class="authorInfo">
-                      <profile :actor="message.actor" :downloadedimages="downloadedImages"></profile> 
-                      <b v-if="message.actor == $gf.me"> <b>Me</b> @{{ actorsToUsernames[message.actor] }}</b>
-                      <b v-else><b><name :actor="message.actor"></name></b> @{{ actorsToUsernames[message.actor] }}</b>
-                    </span>
-                    <div class="messageContent">
-                      <p>{{ message.content }} </p>
-                    </div>
-
-                    <div v-if="message.attachment">
-                      <div v-if="message.attachment.magnet">
-                        <img class="msgImg" :src="downloadedImages[message.attachment.magnet]"/>
-                      </div>
-                      <div v-else>
-                        Waiting for image
-                      </div>
-                    </div>
-                    
-                    <p v-if="message.published == message.updated"> Posted {{timeSincePosted(message.published)}} ago </p>
-                    <p v-else> Last edited {{timeSincePosted(message.updated)}} ago </p>
-
-                    <!-- <div v-if="myLikes.includes()"></div> -->
-                    <like :messageid="message.id" :actorid="$gf.me"></like>
-                    <reply :messageid="message.id" :actorid="$gf.me" :actorstousernames="actorsToUsernames"></reply>
-                    <read :messageid="message.id" :actorid="$gf.me" :actorstousernames="actorsToUsernames"></read>
-
-                    <button @click="removeMessage(message)">
-                      Delete Message
-                    </button>
-                    <button @click="startEditMessage(message)">
-                      Edit Message
-                    </button>
-
-                </div>
-              </div>
-
-              <div :id="`message-${message.id}`" class="message" v-else>
-                <!-- Otherwise, display a bunch of properties from the message -->
-                    <span class="authorInfo">
-                      <profile :actor="message.actor" :downloadedimages="downloadedImages"></profile> 
-                      <b v-if="message.actor == $gf.me"> <b>Me</b> @{{ actorsToUsernames[message.actor] }}</b>
-                      <b v-else><b><name :actor="message.actor"></name></b> @{{ actorsToUsernames[message.actor] }}</b>
-                    </span>
-
-                    <div class="messageContent">
-                      <p>{{ message.content }} </p>
-                    </div>
-
-                    <div v-if="message.attachment">
-                      <div v-if="message.attachment.magnet">
-                        <img class="msgImg" :src="downloadedImages[message.attachment.magnet]"/>
-                      </div>
-                      <div v-else>
-                        Waiting for image
-                      </div>
-                    </div>
-
-                    <p v-if="message.published == message.updated"> Posted {{timeSincePosted(message.published)}} ago </p>
-                    <p v-else> Last edited {{timeSincePosted(message.updated)}} ago </p>
-
-                    <!-- <div v-if="myLikes.includes()"></div> -->
-                    <like :messageid="message.id" :actorid="$gf.me"></like>
-                    <reply :messageid="message.id" :actorid="$gf.me" :actorstousernames="actorsToUsernames"></reply>
-                    <read :messageid="message.id" :actorid="$gf.me" :actorstousernames="actorsToUsernames"></read>
-
-                </div>
-
-            </article>
-          </article>
-
-          <article id="newMessageForm">
-            <form @submit.prevent="sendMessage">
-              <input  type="text" v-model="messageText" placeholder="Type a message..."/>
-              <input type="submit" value="Send"/>
-              <input type="file" accept="image/png, image/jpeg" @change="onImageAttachment"/>
-            </form>
-          </article>
-
-        </section>
-
       </div>
+      
+      <div id="secGroups" style="display: none">
+        <article id="groupInfo">
+          <div id="yesParticipants" v-if="seeingParticipants.value ">
+            <button class="backBtn" @click="backToChat"> Back</button>
+
+            <p><b>{{currGroup.name}}</b></p>
+
+          </div>
+
+          <div id="noParticipants"  v-else>
+            <div v-if="currGroup.id !== ''"><button @click="backToGroups">Back</button><p>{{currGroup.name}}</p> </div>
+            <div v-else><button class="backClassBtn" @click="backToClasses">Back</button> <p>{{currClass.name}} Group Chats</p></div>
+            <button v-if="currGroup.name" id="participantsBtn" @click="seeingParticipants.value = true">Settings</button>
+          </div>
+
+        </article>
+
+        <div id="main">
+
+          <div v-if="!seeingParticipants.value ">
+            <group :currgroup="currGroup" :currclass="currClass" :classid="currClass.id" :actorstousernames="actorsToUsernames"></group>
+          </div>
+
+          <section v-if="seeingParticipants.value">
+            <group v-if="currGroup.id.includes($gf.me.slice(13))" :currgroup="currGroup" :currclass="currClass" :classid="currClass.id" :actorstousernames="actorsToUsernames" :editablename="true"></group>
+            <p> Members: </p>
+            <article id="participants">
+              <article v-for="participant of currGroup.participants">
+                <profile :actor="participant" :downloadedimages="downloadedImages"></profile> 
+                <name :actor="participant"></name></b> @{{ actorsToUsernames[participant] }}
+                <b v-if="currGroup.id.includes(participant.slice(13))"> (Admin)</b>
+                <group v-if="currGroup.id.includes($gf.me.slice(13)) && participant !== $gf.me" :classid="currClass.id" :currclass="currClass" :currgroup="currGroup" 
+                :actorstousernames="actorsToUsernames" :removeallowed="true" :delpar="participant"></group>
+              </article>
+              <group :currgroup="currGroup" :currclass="currClass" :classid="currClass.id" :actorstousernames="actorsToUsernames" :addallowed="true" 
+              :seeingparticipants="seeingParticipants"></group>
+            </article>
+          </section>
+
+          <section id="mainSection" style="display: none;" v-else>
+            
+            <article id="chatMessages" @scroll="scrollMessages">
+              <!-- List all the messages -->
+              <article v-for="message, i of messages" :key="message.id">
+
+                <div :id="`message-${message.id}`" class="myMessage-public" v-if="message.actor == $gf.me">
+
+                              <!-- Display and edit form if we're editing a message -->
+                  <form v-if="editID==message.id" @submit.prevent="saveEditMessage(message)">
+                    <input type="text" v-model="editText">
+                    <input type="submit" value="Save"/>
+                  </form>
+
+                  <!-- Otherwise, display a bunch of properties from the message -->
+                  <div v-else>
+                      <span class="authorInfo">
+
+                        <div id="messageHeader">
+                          <profile :actor="message.actor" :downloadedimages="downloadedImages"></profile> 
+                          <!-- <img width="50" height="50" src="./media/menuWhte.png" @click="showingMenu = true"> -->
+                        </div>
+                        <b><b><name :actor="message.actor"></name></b> @{{ actorsToUsernames[message.actor] }}</b>
+                      </span>
+                      <div class="messageContent">
+                        <p>{{ message.content }} </p>
+                      </div>
+
+                      <div v-if="message.attachment">
+                        <div v-if="message.attachment.magnet">
+                          <img class="msgImg" :src="downloadedImages[message.attachment.magnet]"/>
+                        </div>
+                        <div v-else>
+                          Waiting for image
+                        </div>
+                      </div>
+                      
+                      <p v-if="message.published == message.updated"> Posted {{timeSincePosted(message.published)}} ago </p>
+                      <p v-else> Last edited {{timeSincePosted(message.updated)}} ago </p>
+
+                      <!-- <div v-if="myLikes.includes()"></div> -->
+          
+                        <like :messageid="message.id" :actorid="$gf.me" :mine="true"></like>
+                        <reply :messageid="message.id" :actorid="$gf.me" :actorstousernames="actorsToUsernames"></reply>
+                      <read :messageid="message.id" :actorid="$gf.me" :actorstousernames="actorsToUsernames"></read>
+                  </div>
+                </div>
+
+                <div id="menu" v-if="message.actor == $gf.me" >
+                  <img width="50" height="50" src="./media/trash.png" @click="removeMessage(message)">
+                  <img width="50" height="50" src="./media/edit.png" @click="startEditMessage(message)">
+                </div>
+
+                <div :id="`message-${message.id}`" class="message" v-else>
+                  <!-- Otherwise, display a bunch of properties from the message -->
+                      <span class="authorInfo">
+                        <profile :actor="message.actor" :downloadedimages="downloadedImages"></profile> 
+                        <b v-if="message.actor == $gf.me"> <b>Me</b> @{{ actorsToUsernames[message.actor] }}</b>
+                        <b v-else><b><name :actor="message.actor"></name></b> @{{ actorsToUsernames[message.actor] }}</b>
+                      </span>
+
+                      <div class="messageContent">
+                        <p>{{ message.content }} </p>
+                      </div>
+
+                      <div v-if="message.attachment">
+                        <div v-if="message.attachment.magnet">
+                          <img class="msgImg" :src="downloadedImages[message.attachment.magnet]"/>
+                        </div>
+                        <div v-else>
+                          Waiting for image
+                        </div>
+                      </div>
+
+                      <p v-if="message.published == message.updated"> Posted {{timeSincePosted(message.published)}} ago </p>
+                      <p v-else> Last edited {{timeSincePosted(message.updated)}} ago </p>
+
+                      <!-- <div v-if="myLikes.includes()"></div> -->
+                        <like :messageid="message.id" :actorid="$gf.me"></like>
+                        <reply :messageid="message.id" :actorid="$gf.me" :actorstousernames="actorsToUsernames"></reply>
+                      <read :messageid="message.id" :actorid="$gf.me" :actorstousernames="actorsToUsernames"></read>
+
+                  </div>
+
+              </article>
+            </article>
+
+            <article id="newMessageForm">
+              <form @submit.prevent="sendMessage">
+                <input  type="text" v-model="messageText" placeholder="Type a message..."/>
+                <input type="submit" value="Send"/>
+                <input type="file" accept="image/png, image/jpeg" @change="onImageAttachment"/>
+              </form>
+            </article>
+
+          </section>
+
+        </div>
+      </div>
+
+
 
     </template>
   </div>
+
+  <template id="class">
+    <article v-if="creator">
+      <input v-model="className" placeholder="Enter class name"> </input>
+      <button id="createBtn" @click="createClass"> Create Class</button>
+      <article class="class" v-for="myClass of classes"> 
+        {{myClass.name}} <button @click="deleteClass(myClass)">Delete</button>
+      </article>
+    </article>
+
+    <article class="classStuff">
+      <article>
+        <article v-for="myClass of classes"> 
+          <join :myjoins="myJoins" :classid="myClass.id"></join>
+        </article>
+        <div class="classList">
+          <article class="classArt" v-for="myClass of myClasses"> 
+            <article class="class" @click="updateClass(myClass.id, myClass.name)">{{myClass.name}}</article><img class="leaveClassBtn" width="50" height="50" src="./media/redTrash.png" @click="leaveClass(myClass)">
+          </article>
+        </div>
+      </article>
+      <button class="newClassBtn" @click="addingClass=true"> + Add a Class</button>
+
+      <article v-if="addingClass" id="classAddingBackdrop">
+
+        <article id="classAdding">
+
+          <div style="display: flex; justify-content: space-between;">
+            <p><b>Add New Class</b></p>
+            <button class="addClassBtn" @click="addingClass=false">X</button>
+          </div>
+
+          <label for="groupName"> Search for class:</label>
+          <input v-model="className" @input="displayError = false" type="text" id="newClass" placeholder="Enter class name"> </input>
+
+          <article v-if="className !== ''" class="dropDown"> 
+            <article v-if="classSearch.length === 0"> No classes matching that description found. </article>
+            <article v-else v-for="foundClass of classSearch" class="foundClass" @click="className = foundClass.name">{{foundClass.name}}</article>
+          </article>
+
+
+          <article v-if="displayError">
+            No class by that name found.
+          </article>
+
+          <button id="joinBtn" @click="joinClass"> Join Class</button>
+
+        </article>
+      </article>
+  </article>
+
+</template>
+
+<template id="join">
+  <div style="display: none;">{{joins.length}}</div>
+</template>
   
 
   <template id="group">
@@ -221,11 +294,16 @@
 
           <label for="groupName"> Group Participants:</label>
           <input v-model="currParticipant" @input="displayError = false" type="text" id="participant" placeholder="Enter participant username"> </input>
-
           <button id="addBtn" @click="addParticipant"> Add</button>
 
-          <article v-if="displayError">
-            Invalid username.
+          <article v-if="currParticipant !== ''" class="dropDown"> 
+            <article v-if="participantSearch.length === 0"> No participants in {{currclass.name}} matching that description found. </article>
+            <article v-else v-for="foundParticipant of participantSearch" class="foundClass" @click="addFromDropdown(foundParticipant)">{{foundParticipant}}</article>
+          </article>
+
+
+          <article style="color:red" v-if="displayError">
+            User {{currParticipant}} does not exist in {{currclass.name}}.
           </article>
 
           <article v-for="participant, i of participants">
@@ -292,16 +370,24 @@
       <!-- <form v-else @submit.prevent="saveProfilePic"> -->
       <div v-else >
         <input type="file" accept="image/png, image/jpeg" @change="onImageAttachment"/>
-        <button @click="saveProfilePic"> Change Profile Pic </button>
+        <button class="save" @click="saveProfilePic"> Save Profile Pic </button>
       </div>
       <!-- </form> -->
     <!-- </form> -->
   </template>
 
   <template id="like">
-    <button :id="`dislike-${messageid}`" class="dislikeBtn" v-if="myLikes.length > 0" @click="removeLike"> ❤️ </button>
-    <button :id="`like-${messageid}`" class="likeBtn" v-else @click="sendLike"> 🤍 </button>
-    {{ likes.length }}
+
+    <div v-if="myLikes.length > 0">
+      <img src="./media/redHeart.png" :id="`dislike-${messageid}`" class="dislikeBtn" @click="removeLike">
+      {{ likes.length }}
+    </div>
+    <div v-else>
+      <img v-if="!mine" src="./media/blackHeart.png" :id="`like-${messageid}`" class="likeBtn" @click="sendLike">
+      <img v-else src="./media/whiteHeart.png" :id="`like-${messageid}`" class="likeBtn" @click="sendLike">
+      {{ likes.length }}
+    </div>
+
   </template>
 
   <template id="read">
@@ -342,8 +428,6 @@
             <input type="submit" value="Save"/>
           </form>
         </span>
-
-
 
         </article>
       </div>

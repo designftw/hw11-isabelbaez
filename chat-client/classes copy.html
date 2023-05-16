@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script type="module" src="./chat.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+
+    <nav id="navBar">
+      <h1>
+        EduChat
+      </h1>
+  
+      <button id="logInBtn" v-if="!$gf.me" @click="$gf.toggleLogIn">
+        Log In
+      </button>
+
+    </nav>
+
+    <!-- If we're not logged in, hide everything except the login button -->
+    <template v-if="$gf.me">
+
+        <class :currclass="currClass" :actorstousernames="actorsToUsernames" :creator="true"></group>
+
+    </template>
+  </div>
+  
+
+  <template id="class">
+
+    <article v-if="creator">
+      <input v-model=" createClass" @input="displayError = false" type="text" id="newClass" placeholder="Enter class name"> </input>
+      <button id="createBtn" @click="createClass"> Create Class</button>
+
+
+    </article>
+
+    <article class="classStuff">
+      <article>
+        <article class="class" v-for="myClass of classes" @click="updateClass(group.id, group.name, group.participants)"> 
+          {{myClass.name}}
+        </article>
+      </article>
+
+      <button class="newClassBtn" @click="addingClass=true"> + Add a Class</button>
+
+      <article v-if="addingClass" id="classAddingBackdrop">
+
+        <article id="classAdding">
+
+          <div style="display: flex; justify-content: space-between;">
+            <p><b>Add New Class</b></p>
+            <button class="newClassBtn" @click="creatingGroup=false">X</button>
+          </div>
+
+          <label for="groupName"> Search for class:</label>
+          <input v-model="newClass" @input="displayError = false" type="text" id="newClass" placeholder="Enter class name"> </input>
+
+          <article v-if="displayError">
+            No class by that name found.
+          </article>
+
+          <button id="joinBtn" @click="joinClass"> Join Class</button>
+
+        </article>
+      </article>
+  </article>
+
+</template>
+</body>
+</html>

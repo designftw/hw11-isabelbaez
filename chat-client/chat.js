@@ -31,16 +31,17 @@ const app = {
     return { channel, messagesRaw }
   },
 
-  mounted() {
-    setTimeout(function () {
-      const mainSec = document.getElementById("mainSection");
-      mainSec.style.display = "none";
-    }, 200)
-  },
+  // mounted() {
+  //   setTimeout(function () {
+  //     const mainSec = document.getElementById("mainSection");
+  //     mainSec.style.display = "none";
+  //   }, 200)
+  // },
 
   data() {
     // Initialize some more reactive variables
     return {
+      creatorId: 'graffitiactor://60ede4b1a494c8397cb5bcd58eb6a5c42f8d4a2687e2ccebe2ca6949dd23b6b8',
       messageText: '',
       username: '',
       editID: '',
@@ -62,37 +63,37 @@ const app = {
       downloadedImages: {},
       usernameChanged: false,
       myGroups: null,
+      getClass: {id: ''},
+      currClass: {id: '', name: '', members: []},
       currGroup: {id: '', name: '', participants: []},
       seeingParticipants: {value: false},
+      showingMenu: false,
     }
   },
   
   watch: {
     'currGroup.id': function() {
-      console.log('LA CRICAAA', this.currGroup.name);
 
-      if (this.channel == 'default') {
-        const mainSec = document.getElementById("mainSection");
-        mainSec.style.display = "none";
-        this.channel = this.currGroup.id;
-        const groupp = document.getElementsByClassName("groupStuff");
-        groupp[0].style.width = "29%"
-        
-        console.log(groupp[0].style.width);
+      this.channel = this.currGroup.id;
+
+      // if (this.channel == 'default') {
+      //   const mainSec = document.getElementById("mainSection");
+      //   mainSec.style.display = "none";
+      //   this.channel = this.currGroup.id;
+      //   const groupp = document.getElementsByClassName("groupStuff");
+      //   groupp[0].style.width = "29%"
 
 
-        setTimeout(function () {
-          const groupp = document.getElementsByClassName("groupStuff");
-          groupp[0].style.transition = "none"
-          groupp[0].style.width = "100%"
-          const mainSec = document.getElementById("mainSection");
-          mainSec.style.display = "block";
-        }, 2000)
-      } else {
-        this.channel = this.currGroup.id;
-      }
-
-      console.log(this.channel);
+      //   setTimeout(function () {
+      //     const groupp = document.getElementsByClassName("groupStuff");
+      //     groupp[0].style.transition = "none"
+      //     groupp[0].style.width = "100%"
+      //     const mainSec = document.getElementById("mainSection");
+      //     mainSec.style.display = "block";
+      //   }, 2000)
+      // } else {
+      //   this.channel = this.currGroup.id;
+      // }
 
     },
     async messages(newMessages) {
@@ -149,12 +150,30 @@ const app = {
         .slice(0,10)
 
         .sort((m1, m2)=> new Date(m1.published) - new Date(m2.published))
-      console.log('getting', messages);
       return messages
     },
   },
   methods: {
 
+    backToClasses() {
+      window.location.reload();
+    },
+    backToChat() {
+      this.seeingParticipants.value = false;
+      setTimeout(function() {
+        const mainSec = document.getElementById("mainSection");
+        mainSec.style.display = "block";
+      }, 1)
+    },
+    backToGroups() {
+      const mainSec = document.getElementById("mainSection");
+      mainSec.style.display = "none";
+      this.currGroup.id ='';
+      this.currGroup.name ='';
+      this.currGroup.participants = [];
+      const groupp = document.getElementsByClassName("groupStuff");
+      groupp[0].style.transition = "width 1s"
+    },
     timeSincePosted(past) {
       const today = new Date();
       const posted = new Date(past);
@@ -585,7 +604,7 @@ const Name = {
 }
 
 const Like = {
-  props: ["messageid", "actorid"],
+  props: ["messageid", "actorid", "mine"],
   template: '#like',
   setup(props) {
     const $gf = Vue.inject('graffiti')
@@ -654,12 +673,11 @@ const Like = {
 
         function smallSize(messageId) {
           const dislikeElem = document.getElementById("dislike-" + messageId);
-          dislikeElem.style.fontSize = '1.8vh';
+          dislikeElem.style.width = '40px';
         }
 
         const dislikeElem = document.getElementById("dislike-" + messageId);
-        dislikeElem.style.fontSize = '3vh';
-
+        dislikeElem.style.width = '50px';
         setTimeout(smallSize, 500, [messageId]);
       }
 
@@ -884,15 +902,15 @@ const Reply = {
 }
 
 const Group = {
-  props: ["actorstousernames", "classid", "currgroup", "addallowed", "seeingparticipants", 
+  props: ["actorstousernames", "classid", "currclass", "currgroup", "addallowed", "seeingparticipants", 
   "removeallowed", "delpar", "editablename", "initial"],
   template: '#group',
 
   setup(props) {
     const $gf = Vue.inject('graffiti')
-    //const classid = Vue.toRef(props, 'classid')
+    const classid = Vue.toRef(props, 'classid')
     //const { objects: groupsRaw } = $gf.useObjects([classid])
-    const { objects: groupsRaw } = $gf.useObjects(['test'])
+    const { objects: groupsRaw } = $gf.useObjects([classid])
     const { objects: leavesRaw } = $gf.useObjects([$gf.me]);
     return { groupsRaw, leavesRaw }
   },
@@ -911,11 +929,24 @@ const Group = {
       displayError: false,
       addingParticipant: false,
       editingName: false,
+      participantSearch: [],
     }
   },
-
   computed: {
+    leaves() {
+      let leaves = this.leavesRaw.filter(
+        ( leave =>
+          // Does the message have a type property?
+          leave.type         &&
+          // Is the value of that property 'Note'?
+          leave.type == 'Leave' 
+          ) 
+        // Your filtering here
+      )
+      return leaves;
+    },
     groups() {
+      console.log(this.currclass.members)
       let groups = this.groupsRaw.filter(
         ( group =>
           // Does the message have a type property?
@@ -937,21 +968,23 @@ const Group = {
           leave.type         &&
           // Is the value of that property 'Note'?
           leave.type == 'Leave' 
-          // &&
-          // // Does the message have a content property?
-          // leave.object      &&
-          // // Is that property a string?
-          // leave.object.id.includes(this.$gf.me.slice(13))
+
+          &&
+
+          leave.object 
           ) 
         // Your filtering here
       )
-
+      // const leaveCopies = [];
+      // for (const leave of leaves) {
+      //   leaveCopies.push(leave);
+      // }
       for (const group of groups) {
         for (const leave of leaves) {
           
-          if (leave.object.id == group.id) {
+          if (leave.object.id === group.id) {
             let indx;
-
+  
             for (let i = 0; i < group.participants.length; i++) {
               if (group.participants[i] === leave.actor) {
                 indx = i;
@@ -959,6 +992,7 @@ const Group = {
             }
             if (indx) {
               group.participants.splice(indx, 1);
+              // this.$gf.remove(leave);
             }
           }
         }
@@ -966,7 +1000,38 @@ const Group = {
       return groups;
     },
   },
+  watch: {
+    async currParticipant() {
+      const found = [];
+      console.log(this.currclass.members);
+      for (const member of this.currclass.members) {
+        let username = this.actorstousernames[member];
+
+        if (!username) {
+          username = await this.resolver.actorToUsername(member);
+          this.actorstousernames[member] = username;
+        }
+
+        console.log(username);
+
+        if (username.toLowerCase().includes(this.currParticipant.toLowerCase())) {
+          found.push(username);
+        }
+      }
+      this.participantSearch = found;
+      console.log(this.participantSearch);
+    }
+  },
   methods: {
+    removeLeaves() {
+      for (const leave of this.leaves) {
+        this.$gf.remove(leave);
+      }
+    },
+    addFromDropdown(participant) {
+      this.currParticipant = participant;
+      this.addParticipant();
+    },
     async addParticipant() {
 
       if (this.currParticipant !== '') {
@@ -983,7 +1048,7 @@ const Group = {
           this.actorstousernames[particpantId] = this.currParticipant;
         }
   
-        if (particpantId) {
+        if (particpantId && this.currclass.members.includes(particpantId)) {
           if (!this.participants.includes(particpantId)) {
             this.participants.push(particpantId);
           }
@@ -1034,9 +1099,16 @@ const Group = {
         context: [currGroupObject.actor],
         object: currGroupObject,
       }
-
+      
       this.$gf.post(leaveRequest);
-      window.location.reload();
+      this.seeingparticipants.value = false;
+      this.updateGroup('', '', []);
+
+      // if (this.groups[0]) {
+      //   this.updateGroup(this.groups[0].id, this.groups[0].name, this.groups[0].participants);
+      // } else {
+      //   this.updateGroup('', '', []);
+      // }
       // for (let i = 0; i < currGroupObject.participants.length; i++) {
       //   if (currGroupObject.participants[i] === this.$gf.me) {
       //     currGroupObject.participants.splice(i,1);
@@ -1044,6 +1116,12 @@ const Group = {
       // }
 
     },
+    // async fulfillLeave(leave) {
+    //   while (leave.object.participants.includes(this.$gf.me)) {
+    //     console.log('bet');
+    //   }
+    //   this.$gf.remove(leave);
+    // },
     async addNewParticipant() {
 
       if (this.currParticipant !== '') {
@@ -1064,7 +1142,7 @@ const Group = {
           particpantId = await this.resolver.usernameToActor(this.currParticipant);
           this.actorstousernames[particpantId] = this.currParticipant;
         }
-        if (particpantId) {
+        if (particpantId && this.currclass.members.includes(particpantId)) {
           if (!currGroupObject.participants.includes(particpantId)) {
             currGroupObject.participants.push(particpantId);
             this.addingParticipant = false;
@@ -1098,7 +1176,14 @@ const Group = {
       this.$gf.remove(currGroupObject);
       this.seeingparticipants.value = false;
 
-      window.location.reload();
+      this.updateGroup('', '', []);
+
+      // if (this.groups[0]) {
+      //   this.updateGroup(this.groups[0].id, this.groups[0].name, this.groups[0].participants);
+      // } else {
+      //   this.updateGroup('', '', []);
+      // }
+      //window.location.reload();
       
     },
     createGroup() {
@@ -1106,7 +1191,7 @@ const Group = {
         type: 'Group',
         name: this.name,
         // context: this.classid,
-        context: ['test'],
+        context: [this.currclass.id],
         participants: this.participants,
       }
       this.$gf.post(group);
@@ -1117,11 +1202,339 @@ const Group = {
       this.currgroup.id = id;
       this.currgroup.name = name;
       this.currgroup.participants = participants;
+
+      const mainSec = document.getElementById("mainSection");
+
+      if (mainSec && mainSec.style.display === "none") {
+        const groupp = document.getElementsByClassName("groupStuff");
+        groupp[0].style.width = "29%"
+
+        setTimeout(function () {
+          const mainSec = document.getElementById("mainSection");
+          mainSec.style.display = "block";
+          const groupp = document.getElementsByClassName("groupStuff");
+          groupp[0].style.transition = "none"
+          groupp[0].style.width = "100%"
+        }, 1000)
+      }
     }
   }
 }
 
-app.components = { Profile, Name, Like, Read, Reply, Group }
+const Join = {
+  props: ["actorstousernames", "myjoins", "classid"],
+  template: '#join',
+
+  setup(props) {
+    const $gf = Vue.inject('graffiti')
+    // //const { objects: groupsRaw } = $gf.useObjects([classid])
+    // const classContext = Vue.ref('default');
+    // const context = Vue.computed(()=> [classContext.value])
+    const classid = Vue.toRef(props, 'classid');
+
+    const { objects: joinsRaw } = $gf.useObjects([classid])
+    return { joinsRaw }
+  },
+
+  created() {
+    this.resolver = new Resolver(this.$gf)
+  },
+
+  data() {
+    // Initialize some more reactive variables
+    return {
+      // creatingGroup: false,
+    }
+  },
+
+  computed: {
+    joins() {
+
+      let joins = this.joinsRaw.filter(
+        ( join =>
+          // Does the message have a type property?
+          join.type         &&
+          // Is the value of that property 'Note'?
+          join.type == 'Join' &&
+          // &&
+          // // Does the message have a content property?
+          join.actor     && 
+          join.actor == this.$gf.me 
+          ) 
+        // Your filtering here
+      )
+
+      for (const join of joins) {
+        this.myjoins.joins.push(join);
+      }
+
+      return joins;
+    },
+  },
+
+  watch: {
+    joins() {
+      for (const join of this.joins) {
+        this.myjoins.joins.push(join);
+      }
+    }
+  }
+}
+
+
+
+const Class = {
+  props: ["actorstousernames", "currclass", "creator", "getclass"],
+  template: '#class',
+
+  setup(props) {
+    const $gf = Vue.inject('graffiti')
+    //const { objects: groupsRaw } = $gf.useObjects([classid])
+    const classContext = Vue.ref('default');
+    const context = Vue.computed(()=> [classContext.value])
+
+    const { objects: classesRaw } = $gf.useObjects(['MITClasses'])
+    const { objects: joinsRaw } = $gf.useObjects(context);
+    const { objects: groupsRaw } = $gf.useObjects(context);
+
+    return { classContext, classesRaw, joinsRaw, groupsRaw }
+  },
+
+  created() {
+    this.resolver = new Resolver(this.$gf)
+  },
+
+  data() {
+    // Initialize some more reactive variables
+    return {
+      className: '',
+      addingClass: false,
+      displayError: false,
+      myJoins: {joins: []},
+      change: false,
+      classSearch: [],
+      // creatingGroup: false,
+    }
+  },
+
+  watch: {
+    joins(newJoins) {
+      const members = [];
+      for (const join of newJoins) {
+        members.push(join.actor);
+      }
+      this.currclass.members = members;
+    },
+    className() {
+      const found = [];
+      for (const potClass of this.classes) {
+        if (potClass.name.toLowerCase().includes(this.className.toLowerCase())) {
+          found.push(potClass);
+        }
+      }
+      this.classSearch = found;
+    }
+  },
+
+  computed: {
+    classes() {
+      let classes = this.classesRaw.filter(
+        ( myClass =>
+          // Does the message have a type property?
+          myClass.type         &&
+          // Is the value of that property 'Note'?
+          myClass.type == 'Class'     
+          ) 
+        // Your filtering here
+      )
+      return classes;
+    },
+    joins() {
+      let joins = this.joinsRaw.filter(
+        ( join =>
+          // Does the message have a type property?
+          join.type         &&
+          // Is the value of that property 'Note'?
+          join.type == 'Join'     
+          ) 
+        // Your filtering here
+      )
+      return joins;
+    },
+    groups() {
+      let joins = this.groupsRaw.filter(
+        ( group =>
+          // Does the message have a type property?
+          group.type         &&
+          // Is the value of that property 'Note'?
+          group.type == 'Group' && 
+          
+          group.participants.includes(this.$gf.me)
+          ) 
+        // Your filtering here
+      )
+      return joins;
+    },
+    myClasses() {
+
+      let myClasses;
+      let changing = false;
+
+      if (this.change) {
+        changing = true;
+      }
+
+      if (!this.creator) {
+
+        myClasses = this.classesRaw.filter(
+          ( myClass =>
+            // Does the message have a type property?
+            myClass.type         &&
+            // Is the value of that property 'Note'?
+            myClass.type == 'Class'     
+            ) 
+          // Your filtering here
+        )
+          const myClassIds = [];
+
+          for (const aClass of myClasses) {
+            //this.getclass.id = aClass.id;
+
+            //let joinsWait = this.joinsRaw.length;
+
+            for (const join of this.myJoins.joins) {
+              const id = join.object.id;
+              if (id=== aClass.id) {
+                myClassIds.push(aClass.id);
+              }
+            }
+          }
+    
+          myClasses = this.classesRaw.filter(
+            ( myClass =>
+              myClassIds.includes(myClass.id)
+            ) 
+          )
+      }
+      return myClasses;
+    },
+  },
+  methods: {
+    joinClass() {
+      let currClassObject;
+      for (const aClass of this.classes) {
+        if (aClass.name === this.className) {
+          currClassObject = aClass;
+        }
+      }
+      const join = {
+        type: 'Join',
+        summary: this.actorstousernames[this.$gf.me]? this.actorstousernames[this.$gf.me] : this.$gf.me + ' joined class ' + currClassObject.name,
+        context: [currClassObject.id],
+        object: currClassObject,
+      }
+      this.$gf.post(join);
+      this.addingClass = false;
+    },
+    async leaveClass(classObj) {
+      this.classContext = classObj.id;
+      console.log("MAMAMELA", this.joins);
+
+      function delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
+
+      await delay(1000);
+
+      for (const join of this.joins) {
+        console.log('ok');
+        const id = join.object.id;
+        if (this.$gf.me === join.actor && id == classObj.id) {
+          this.$gf.remove(join);
+        }
+      }
+      //window.location.reload();
+      // const { objects: groupsRaw } = $gf.useObjects([this.currclass.id])
+      // let groups = groupsRaw.filter(
+      //   ( group =>
+      //     // Does the message have a type property?
+      //     group.type         &&
+      //     // Is the value of that property 'Note'?
+      //     group.type== 'Group' 
+      //     &&
+      //     // Does the message have a content property?
+      //     group.participants      &&
+      //     // Is that property a string?
+      //     group.participants.includes(this.$gf.me)
+      //     ) 
+      // )
+
+      console.log(this.groups);
+      
+      // eliminates groups created by user, and sends leaves requests for groups in which they participate, but are not admin
+      for (const group of this.groups) {
+        if (group.actor === this.$gf.me) {
+          this.$gf.remove(group);
+        } else {
+          const leaveRequest = {
+            type: 'Leave',
+            summary: this.actorstousernames[this.$gf.me]? this.actorstousernames[this.$gf.me] : this.$gf.me + ' wants to leave group ' + group.name,
+            context: [group.actor],
+            object: group,
+          }
+          this.$gf.post(leaveRequest);
+        }
+      }
+      this.myJoins.joins = this.joins;
+      this.change = true;
+      window.location.reload();
+    },
+    createClass() {
+      const aClass = {
+        type: 'Class',
+        name: this.className,
+        context: ['MITClasses'],
+      }
+      this.$gf.post(aClass);
+      // const join = {
+      //   type: 'Join',
+      //   summary: this.actorstousernames[this.$gf.me]? this.actorstousernames[this.$gf.me] : this.$gf.me + ' joined class ' + aClass.name,
+      //   context: [aClass.id],
+      //   object: aClass,
+      // }
+      // this.$gf.post(join);
+    },
+    deleteClass(aClass) {
+      this.$gf.remove(aClass);
+    },
+    updateClass(id, name) {
+
+      // const classSec = document.getElementsByClassName("classStuff");
+      // classSec[0].style.width = "0%"
+
+      // setTimeout(function (currclass) {
+      //   currclass.id = id;
+      //   currclass.name = name;
+      // }, 1000, this.currclass)
+
+      this.classContext = id;
+
+      const groupSec = document.getElementById("secGroups");
+      groupSec.style.display = "block";
+
+      const classSec = document.getElementById("secClasses");
+      classSec.style.display = "none";
+
+      this.currclass.id = id;
+      this.currclass.name = name;
+
+    }
+  }
+}
+
+Class.components = { Join }
+
+app.components = { Profile, Name, Like, Read, Reply, Group, Class, Join }
 Vue.createApp(app)
    .use(GraffitiPlugin(Vue))
    .mount('#app')

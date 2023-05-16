@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script type="module" src="./chat.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+
+    <nav id="navBar">
+      <h1>
+        EduChat
+      </h1>
+  
+      <button id="logInBtn" v-if="!$gf.me" @click="$gf.toggleLogIn">
+        Log In
+      </button>
+
+      <article v-else> <a href="profile.html"><profile :actor="$gf.me" :downloadedimages="downloadedImages"> </profile> <name :actor="$gf.me"></name> </a></article>
+
+    </nav>
+
+    <!-- If we're not logged in, hide everything except the login button -->
+    <template v-if="$gf.me">
+
+      <div id="classes">
+        <h1> Classes </h1>
+        <class :currclass="currClass" :actorstousernames="actorsToUsernames"></class>
+      </div>
+
+    </template>
+
+  </div>
+  
+
+  <template id="class">
+
+
+    <article v-if="creator">
+      <input v-model="className" placeholder="Enter class name"> </input>
+      <button id="createBtn" @click="createClass"> Create Class</button>
+      <article class="class" v-for="myClass of classes"> 
+        {{myClass.name}} <button @click="deleteClass(myClass)">Delete</button>
+      </article>
+    </article>
+
+    <article class="classStuff">
+      <article>
+        <article class="class" v-for="myClass of myClasses" @click="updateClass(myClass.id, myClass.name)"> 
+          <a href="index.html">{{myClass.name}}</a>
+        </article>
+      </article>
+
+      <button class="newClassBtn" @click="addingClass=true"> + Add a Class</button>
+
+      <article v-if="addingClass" id="classAddingBackdrop">
+
+        <article id="classAdding">
+
+          <div style="display: flex; justify-content: space-between;">
+            <p><b>Add New Class</b></p>
+            <button class="newClassBtn" @click="creatingGroup=false">X</button>
+          </div>
+
+          <label for="groupName"> Search for class:</label>
+          <input v-model="className" @input="displayError = false" type="text" id="newClass" placeholder="Enter class name"> </input>
+
+          <article v-if="displayError">
+            No class by that name found.
+          </article>
+
+          <button id="joinBtn" @click="joinClass"> Join Class</button>
+
+        </article>
+      </article>
+  </article>
+
+</template>
+
+  <template id="group">
+
+    <article id="addAllowedArt" v-if="addallowed">
+      <article v-if="currgroup.id.includes($gf.me.slice(13))">
+
+        <button v-if="!addingParticipant" @click="addingParticipant = true"> + Add Participant </button>
+
+        <article v-if="addingParticipant">
+            <input v-model="currParticipant" @input="displayError = false" type="text" id="participant" placeholder="Enter participant username"> </input>
+            <button id="addBtn" @click="addNewParticipant"> Add</button>
+            <article v-if="displayError">
+              Invalid username.
+            </article>
+        </article>
+
+        <button style="background-color: red" @click="deleteGroup"> Delete Group </button>
+      </article>
+      <button style="background-color: red" v-else @click="leaveGroup"> Request to Leave Group </button>
+    </article>
+
+    <article v-else-if="removeallowed">
+      <button class="removeParticipantBtn" @click="removeExistingParticipant"> Remove </button>
+    </article>
+
+    <article v-else-if="editablename">
+      <button class="groupNameChangeBtn" v-if="editingName == false" style="height: fit-content" @click="editingName = true"> Edit Group Name </button>
+
+      <article v-if="editingName">
+        <input v-model="name" @input="displayError = false" type="text" id="participant"> </input>
+        <button class="groupNameChangeBtn" @click="changeGroupName"> Change Name</button>
+      </article>
+    </article>
+
+    <article v-else class="groupStuff">
+      <article>
+        <article class="group" v-for="group of groups" @click="updateGroup(group.id, group.name, group.participants)"> 
+          {{group.name}}
+        </article>
+      </article>
+
+      <button class="newChatBtn" @click="creatingGroup=true"> + New Chat</button>
+
+      <article v-if="creatingGroup" id="groupCreationBackdrop">
+
+        <article id="groupCreation">
+
+          <div style="display: flex; justify-content: space-between;">
+            <p><b>New Chat</b></p>
+            <button class="newChatButton" @click="creatingGroup=false">X</button>
+          </div>
+
+          <label for="groupName"> Group Name:</label>
+          <input v-model="name" type="text" id="groupName" placeholder="Enter chat name"> </input>
+
+          <br>
+
+          <label for="groupName"> Group Participants:</label>
+          <input v-model="currParticipant" @input="displayError = false" type="text" id="participant" placeholder="Enter participant username"> </input>
+
+          <button id="addBtn" @click="addParticipant"> Add</button>
+
+          <article v-if="displayError">
+            Invalid username.
+          </article>
+
+          <article v-for="participant, i of participants">
+            <article class="participant" v-if="participant !== $gf.me"> 
+              {{actorstousernames[participant]}}
+              <button @click="removeParticipant(i)">X</button>
+            </article>
+          </article>
+
+          <button id="createBtn" @click="createGroup"> Create Group</button>
+
+        </article>
+      </article>
+  </article>
+
+</template>
+
+  <template id="name">
+    <span v-if="!editing">
+
+      <!-- If we're not editing the name-->
+      <!-- Display the profile's name, if it exists -->
+      <!-- or anonymous if it doesn't -->
+      <span class="profileName">{{ profile? profile.name : 'Anonymous' }}</span>
+
+      <!-- Also if the name is "editable" add an edit button -->
+      <button v-if="editable" @click="editName">
+        Edit Name
+      </button>
+    </span>
+
+    <!-- If we're in the editing state, create something to edit the name-->
+    <form v-else @submit.prevent="saveName">
+      <input type="text" v-model="editText"/>
+      <input type="submit" value="Save Name"/>
+    </form>
+  </template>
+
+
+  <template id="profile">
+    <span v-if="!editing">
+      <!-- If we're not editing the name-->
+      <!-- Display the profile's name, if it exists -->
+      <!-- or anonymous if it doesn't -->
+
+      <div v-if="profilePic">
+        <img class="authorPic" :src="downloadedPic"/>
+      </div>
+
+      <div v-else>
+        <img class="authorPic" src="missingPic.webp"/>
+      </div>
+
+      <!-- {{ profilePic? '' : 'Anonymous' }} -->
+
+      <!-- Also if the name is "editable" add an edit button -->
+      <button v-if="editable" @click="editProfilePic">
+        Edit Profile Pic
+      </button>
+    </span>
+
+    <!-- If we're in the editing state, create something to edit the name-->
+    <!-- <form v-else @submit.prevent="saveProfilePic"> -->
+      <!-- <form v-else @submit.prevent="saveProfilePic"> -->
+      <div v-else >
+        <input type="file" accept="image/png, image/jpeg" @change="onImageAttachment"/>
+        <button @click="saveProfilePic"> Change Profile Pic </button>
+      </div>
+      <!-- </form> -->
+    <!-- </form> -->
+  </template>
+
+  <template id="like">
+    <button :id="`dislike-${messageid}`" class="dislikeBtn" v-if="myLikes.length > 0" @click="removeLike"> ❤️ </button>
+    <button :id="`like-${messageid}`" class="likeBtn" v-else @click="sendLike"> 🤍 </button>
+    {{ likes.length }}
+  </template>
+
+  <template id="read">
+    <div>
+      Seen by 
+      <span v-for="read of reads">
+        {{ username(read.actor)}},
+      </span>
+      <div class="loader" :id="`loader-${messageid}`"></div>
+  </div>
+</template>
+
+<template id="reply">
+  <article class="replyObject">
+
+    <button v-if="!replying" @click="replying = true">Reply</button>
+
+    <div v-else>
+      <input type="text" v-model="replyText" placeholder="Type a reply..."/>
+      <button @click="sendReply">Send</button>
+    </div>
+
+    <div v-if="replies.length > 0">
+      <button v-if="!viewing" @click="viewReplies">View Replies</button>
+      <div v-else>
+        <button @click="viewReplies">Hide Replies</button>
+
+        <article class="replyClass" v-for="reply of replies">
+
+          <div v-if="!editing[reply.id]"> <span> <b>{{username(reply.actor)}}:</b> {{reply.content}}</span>
+            <button v-if="reply.actor==$gf.me" @click="edit(reply)">Edit</button>
+            <button v-if="reply.actor==$gf.me" @click="removeReply(reply)">Delete</button>
+          </div>
+
+          <span v-else> <b>{{username(reply.actor)}}:</b>        
+            <form v-if="reply.actor==$gf.me" @submit.prevent="editReply(reply)">
+            <input type="text" v-model="editReplyText">
+            <input type="submit" value="Save"/>
+          </form>
+        </span>
+
+
+
+        </article>
+      </div>
+    </div>
+  </article>
+</template>
+
+</body>
+</html>
